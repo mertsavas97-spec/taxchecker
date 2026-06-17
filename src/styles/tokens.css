@@ -1,0 +1,163 @@
+/**
+ * TaxChecker Design Tokens
+ * Trustworthy, professional, IRS-adjacent — flat surfaces, no gradients.
+ */
+
+:root {
+  /* ——— Brand palette ——— */
+  --tc-navy-950: oklch(0.22 0.04 255);
+  --tc-navy-900: oklch(0.28 0.05 265);
+  --tc-navy-800: oklch(0.34 0.06 265);
+  --tc-navy-700: oklch(0.42 0.07 255);
+  --tc-slate-600: oklch(0.52 0.02 255);
+  --tc-slate-500: oklch(0.58 0.02 255);
+  --tc-slate-400: oklch(0.68 0.015 255);
+  --tc-slate-200: oklch(0.91 0.006 255);
+  --tc-slate-100: oklch(0.96 0.004 255);
+  --tc-slate-50: oklch(0.985 0.002 255);
+  --tc-paper: oklch(0.985 0.004 250);
+  --tc-ink: oklch(0.18 0.02 255);
+
+  /* ——— Semantic colors ——— */
+  --tc-brand: var(--tc-navy-900);
+  --tc-brand-foreground: oklch(0.99 0 0);
+  --tc-link: oklch(0.42 0.1 250);
+  --tc-link-hover: oklch(0.34 0.1 250);
+  --tc-savings: oklch(0.45 0.1 155);
+  --tc-savings-muted: oklch(0.96 0.02 155);
+  --tc-liability: oklch(0.48 0.12 45);
+  --tc-liability-muted: oklch(0.96 0.03 55);
+  --tc-info: oklch(0.48 0.08 245);
+  --tc-info-muted: oklch(0.96 0.02 245);
+  --tc-warning: oklch(0.55 0.14 75);
+  --tc-warning-muted: oklch(0.97 0.03 85);
+  --tc-danger: oklch(0.52 0.18 25);
+  --tc-danger-muted: oklch(0.97 0.02 25);
+
+  /* ——— Typography scale ——— */
+  --tc-text-xs: 0.75rem;
+  --tc-text-sm: 0.875rem;
+  --tc-text-base: 1rem;
+  --tc-text-lg: 1.125rem;
+  --tc-text-xl: 1.25rem;
+  --tc-text-2xl: 1.5rem;
+  --tc-text-3xl: 1.875rem;
+  --tc-text-4xl: 2.25rem;
+  --tc-text-5xl: 3rem;
+
+  --tc-leading-tight: 1.2;
+  --tc-leading-snug: 1.35;
+  --tc-leading-normal: 1.55;
+  --tc-leading-relaxed: 1.7;
+
+  --tc-tracking-tight: -0.025em;
+  --tc-tracking-normal: 0;
+  --tc-tracking-wide: 0.04em;
+
+  /* ——— Spacing scale (4px base) ——— */
+  --tc-space-1: 0.25rem;
+  --tc-space-2: 0.5rem;
+  --tc-space-3: 0.75rem;
+  --tc-space-4: 1rem;
+  --tc-space-5: 1.25rem;
+  --tc-space-6: 1.5rem;
+  --tc-space-8: 2rem;
+  --tc-space-10: 2.5rem;
+  --tc-space-12: 3rem;
+  --tc-space-16: 4rem;
+  --tc-space-20: 5rem;
+  --tc-space-24: 6rem;
+  --tc-space-32: 8rem;
+
+  /* ——— Layout widths ——— */
+  --tc-width-page: 80rem;
+  --tc-width-content: 42rem;
+  --tc-width-prose: 48rem;
+  --tc-width-calculator: 72rem;
+  --tc-width-narrow: 32rem;
+
+  /* ——— Section rhythm ——— */
+  --tc-section-y: var(--tc-space-16);
+  --tc-section-y-lg: var(--tc-space-24);
+  --tc-gutter-x: var(--tc-space-4);
+  --tc-gutter-x-lg: var(--tc-space-6);
+
+  /* ——— Radii ——— */
+  --tc-radius-sm: 0.25rem;
+  --tc-radius-md: 0.375rem;
+  --tc-radius-lg: 0.5rem;
+  --tc-radius-xl: 0.75rem;
+  --tc-radius-2xl: 1rem;
+
+  /* ——— Shadows (subtle, flat) ——— */
+  --tc-shadow-xs: 0 1px 2px oklch(0.18 0.02 255 / 0.04);
+  --tc-shadow-sm: 0 1px 3px oklch(0.18 0.02 255 / 0.06),
+    0 1px 2px oklch(0.18 0.02 255 / 0.04);
+  --tc-shadow-md: 0 4px 6px oklch(0.18 0.02 255 / 0.05),
+    0 2px 4px oklch(0.18 0.02 255 / 0.04);
+  --tc-shadow-lg: 0 10px 15px oklch(0.18 0.02 255 / 0.05),
+    0 4px 6px oklch(0.18 0.02 255 / 0.03);
+  --tc-shadow-ring: 0 0 0 3px oklch(0.42 0.1 250 / 0.15);
+
+  /* ——— shadcn token overrides (TaxChecker light theme) ——— */
+  --background: var(--tc-paper);
+  --foreground: var(--tc-ink);
+  --card: oklch(1 0 0);
+  --card-foreground: var(--tc-ink);
+  --popover: oklch(1 0 0);
+  --popover-foreground: var(--tc-ink);
+  --primary: var(--tc-brand);
+  --primary-foreground: var(--tc-brand-foreground);
+  --secondary: var(--tc-slate-100);
+  --secondary-foreground: var(--tc-navy-900);
+  --muted: var(--tc-slate-100);
+  --muted-foreground: var(--tc-slate-600);
+  --accent: var(--tc-slate-100);
+  --accent-foreground: var(--tc-navy-900);
+  --destructive: var(--tc-danger);
+  --border: var(--tc-slate-200);
+  --input: var(--tc-slate-200);
+  --ring: oklch(0.42 0.1 250 / 0.45);
+  --radius: var(--tc-radius-lg);
+}
+
+@theme inline {
+  --color-tc-brand: var(--tc-brand);
+  --color-tc-brand-foreground: var(--tc-brand-foreground);
+  --color-tc-link: var(--tc-link);
+  --color-tc-savings: var(--tc-savings);
+  --color-tc-savings-muted: var(--tc-savings-muted);
+  --color-tc-liability: var(--tc-liability);
+  --color-tc-liability-muted: var(--tc-liability-muted);
+  --color-tc-info: var(--tc-info);
+  --color-tc-info-muted: var(--tc-info-muted);
+  --color-tc-warning: var(--tc-warning);
+  --color-tc-warning-muted: var(--tc-warning-muted);
+  --color-tc-danger: var(--tc-danger);
+  --color-tc-danger-muted: var(--tc-danger-muted);
+  --color-tc-paper: var(--tc-paper);
+  --color-tc-ink: var(--tc-ink);
+  --color-tc-slate-100: var(--tc-slate-100);
+  --color-tc-slate-200: var(--tc-slate-200);
+
+  --spacing-section: var(--tc-section-y);
+  --spacing-section-lg: var(--tc-section-y-lg);
+  --spacing-gutter: var(--tc-gutter-x);
+  --spacing-gutter-lg: var(--tc-gutter-x-lg);
+
+  --width-page: var(--tc-width-page);
+  --width-content: var(--tc-width-content);
+  --width-prose: var(--tc-width-prose);
+  --width-calculator: var(--tc-width-calculator);
+  --width-narrow: var(--tc-width-narrow);
+
+  --shadow-tc-xs: var(--tc-shadow-xs);
+  --shadow-tc-sm: var(--tc-shadow-sm);
+  --shadow-tc-md: var(--tc-shadow-md);
+  --shadow-tc-lg: var(--tc-shadow-lg);
+  --shadow-tc-ring: var(--tc-shadow-ring);
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --font-heading: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+}

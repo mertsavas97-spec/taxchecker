@@ -12,7 +12,7 @@ export interface NavGroup {
 export const siteConfig = {
   name: 'TaxChecker',
   tagline: 'Federal tax estimates you can verify',
-  domain: 'https://taxchecker.app',
+  domain: 'https://www.taxchecker.app',
 } as const;
 
 export const calculatorsHubLink: NavLink = {

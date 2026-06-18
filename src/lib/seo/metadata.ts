@@ -5,7 +5,7 @@ import type { ResourceDefinition } from '@/config/resources';
 import type { TrustPageDefinition } from '@/config/trust-pages';
 import { site } from '@/config/site';
 import { ogPaths } from '@/lib/og/paths';
-import { absoluteUrl, canonicalUrl, ogImageUrl } from '@/lib/seo/urls';
+import { absoluteUrl, canonicalUrl, ogImageUrl, resolveMetadataPath } from '@/lib/seo/urls';
 
 export interface MetadataOptions {
   title?: string;
@@ -125,7 +125,7 @@ function assembleMetadata(
   description: string,
   options: MetadataOptions = {},
 ): Metadata {
-  const path = options.path ?? '/';
+  const path = resolveMetadataPath(options.path ?? '/');
 
   return {
     title,
@@ -249,7 +249,7 @@ export function buildResourceMetadata(
 }
 
 export function buildArticleMetadata(article: ArticleMetadataInput): Metadata {
-  const path = article.path ?? blogUrlPath(article.slug);
+  const path = resolveMetadataPath(article.path ?? blogUrlPath(article.slug));
   const keywords = article.keywords ?? [];
 
   const metadata = assembleMetadata(article.title, article.description, {

@@ -6,7 +6,7 @@
 export const site = {
   siteName: 'TaxChecker',
   domain: 'taxchecker.app',
-  productionUrl: 'https://taxchecker.app',
+  productionUrl: 'https://www.taxchecker.app',
   defaultTitle: 'TaxChecker — Free Federal Tax Calculators',
   defaultDescription:
     'Free federal tax calculators for self-employment, 1099 income, quarterly estimated taxes, LLC vs S Corp comparisons and HSA savings. Estimates only — not tax advice.',
@@ -16,8 +16,8 @@ export const site = {
   organization: {
     name: 'TaxChecker',
     legalName: 'TaxChecker',
-    url: 'https://taxchecker.app',
-    logo: 'https://taxchecker.app/brand/taxchecker-logo.png',
+    url: 'https://www.taxchecker.app',
+    logo: 'https://www.taxchecker.app/brand/taxchecker-logo.png',
     contactPath: '/contact',
     foundingDate: '2026',
     description:

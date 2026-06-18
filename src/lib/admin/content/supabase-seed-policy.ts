@@ -3,11 +3,10 @@ export type SeedRowAction = 'insert' | 'update' | 'skip';
 /** Pure helper for tests — decides whether a seed row should insert, update, or skip. */
 export function planSeedRowAction(
   exists: boolean,
-  options: { force?: boolean; edited?: boolean; alwaysSyncRegistry?: boolean },
+  options: { force?: boolean; edited?: boolean },
 ): SeedRowAction {
   if (!exists) return 'insert';
   if (options.force) return 'update';
-  if (options.alwaysSyncRegistry) return 'update';
   if (options.edited) return 'skip';
   return 'skip';
 }

@@ -23,12 +23,6 @@ describe('planSeedRowAction', () => {
     expect(planSeedRowAction(true, { force: true })).toBe('update');
   });
 
-  it('updates registry-backed rows even without force', () => {
-    expect(
-      planSeedRowAction(true, { alwaysSyncRegistry: true }),
-    ).toBe('update');
-  });
-
   it('skips edited blog rows unless force is enabled', () => {
     expect(planSeedRowAction(true, { edited: true })).toBe('skip');
     expect(planSeedRowAction(true, { edited: true, force: true })).toBe(

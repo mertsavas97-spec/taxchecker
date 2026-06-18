@@ -1,12 +1,9 @@
 import 'server-only';
 
-import type { SupabaseClient } from '@supabase/supabase-js';
+import type { PostgrestError, SupabaseClient } from '@supabase/supabase-js';
 
-import { createAdminClient } from '@/lib/supabase/admin';
+import { createAdminClient, isSupabaseAdminConfigured } from '@/lib/supabase/admin';
 import {
-  mapCmsBlogPostToDb,
-  mapCmsCalculatorToDb,
-  mapCmsResourceToDb,
   type DbCmsBlogPost,
   type DbCmsCalculatorMetadata,
   type DbCmsResource,
@@ -17,10 +14,14 @@ import {
   seedCmsResources,
 } from '@/lib/admin/content/seed';
 import {
+  mapCmsBlogPostToDbForSeed,
+  mapCmsCalculatorToDbForSeed,
+  mapCmsResourceToDbForSeed,
+} from '@/lib/admin/content/supabase-seed-mappers';
+import {
   planSeedRowAction,
-  shouldUseRemotePublishedFallback,
+  type SeedRowAction,
 } from '@/lib/admin/content/supabase-seed-policy';
-import type { CmsBlogPost } from '@/lib/admin/content/types';
 
 export type SeedSyncCounts = {
   inserted: number;
@@ -39,12 +40,12 @@ export type SeedSyncOptions = {
   force?: boolean;
 };
 
-function isEditedBlogPost(existing: DbCmsBlogPost): boolean {
-  return (existing.revision ?? 1) > 1;
-}
-
 function cmsDb(client: SupabaseClient): SupabaseClient<any> {
   return client as SupabaseClient<any>;
+}
+
+function isEditedBlogPost(existing: Pick<DbCmsBlogPost, 'revision'>): boolean {
+  return (existing.revision ?? 1) > 1;
 }
 
 async function logSeedAudit(
@@ -66,9 +67,47 @@ async function logSeedAudit(
   }
 }
 
+async function writeSeedRow(
+  supabase: SupabaseClient<any>,
+  table: string,
+  conflictColumn: string,
+  conflictValue: string,
+  payload: Record<string, unknown>,
+  action: SeedRowAction,
+): Promise<PostgrestError | null> {
+  if (action === 'skip') return null;
+
+  if (action === 'insert') {
+    const { error } = await supabase.from(table).insert(payload);
+    return error;
+  }
+
+  const { error } = await supabase
+    .from(table)
+    .update(payload)
+    .eq(conflictColumn, conflictValue);
+
+  return error;
+}
+
+function recordSeedCount(
+  counts: SeedSyncCounts,
+  action: SeedRowAction,
+): void {
+  if (action === 'insert') counts.inserted += 1;
+  else if (action === 'update') counts.updated += 1;
+  else counts.skipped += 1;
+}
+
 export async function syncSupabaseCmsSeed(
   options: SeedSyncOptions = {},
 ): Promise<SeedSyncResult> {
+  if (!isSupabaseAdminConfigured()) {
+    throw new Error(
+      'Supabase admin credentials are missing. Set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in production.',
+    );
+  }
+
   const force = options.force === true;
   const supabase = cmsDb(createAdminClient());
   const result: SeedSyncResult = {
@@ -88,10 +127,10 @@ export async function syncSupabaseCmsSeed(
     supabase.from('cms_calculator_metadata').select('calculator_slug'),
   ]);
 
-  if (resourcesError) result.errors.push(`resources: ${resourcesError.message}`);
-  if (blogError) result.errors.push(`blog: ${blogError.message}`);
+  if (resourcesError) result.errors.push(`resources lookup: ${resourcesError.message}`);
+  if (blogError) result.errors.push(`blog lookup: ${blogError.message}`);
   if (calculatorsError) {
-    result.errors.push(`calculators: ${calculatorsError.message}`);
+    result.errors.push(`calculators lookup: ${calculatorsError.message}`);
   }
 
   const resourceBySlug = new Map(
@@ -113,89 +152,98 @@ export async function syncSupabaseCmsSeed(
 
   for (const calculator of seedCmsCalculators()) {
     const exists = calculatorBySlug.has(calculator.slug);
-    const action = planSeedRowAction(exists, { force, alwaysSyncRegistry: true });
+    const action = planSeedRowAction(exists, { force });
+    recordSeedCount(result.calculators, action);
 
-    if (action === 'skip') {
-      result.calculators.skipped += 1;
-      continue;
-    }
+    if (action === 'skip') continue;
 
-    const payload = mapCmsCalculatorToDb(calculator);
-    const { error } = await supabase
-      .from('cms_calculator_metadata')
-      .upsert(payload, { onConflict: 'calculator_slug' });
+    const payload = mapCmsCalculatorToDbForSeed(calculator);
+    const error = await writeSeedRow(
+      supabase,
+      'cms_calculator_metadata',
+      'calculator_slug',
+      calculator.slug,
+      payload,
+      action,
+    );
 
     if (error) {
+      result.calculators[action === 'insert' ? 'inserted' : 'updated'] -= 1;
       result.errors.push(`calculator ${calculator.slug}: ${error.message}`);
       continue;
     }
 
-    if (action === 'insert') {
-      result.calculators.inserted += 1;
-      await logSeedAudit('seed_insert', 'calculator', calculator.slug, { force });
-    } else {
-      result.calculators.updated += 1;
-      await logSeedAudit('seed_update', 'calculator', calculator.slug, { force });
-    }
+    await logSeedAudit(
+      action === 'insert' ? 'seed_insert' : 'seed_update',
+      'calculator',
+      calculator.slug,
+      { force },
+    );
   }
 
   for (const resource of seedCmsResources()) {
     const existing = resourceBySlug.get(resource.slug);
     const action = planSeedRowAction(Boolean(existing), { force });
+    recordSeedCount(result.resources, action);
 
-    if (action === 'skip') {
-      result.resources.skipped += 1;
-      continue;
-    }
+    if (action === 'skip') continue;
 
-    const payload = mapCmsResourceToDb(resource);
-    const { error } = await supabase
-      .from('cms_resources')
-      .upsert(payload, { onConflict: 'slug' });
+    const payload = mapCmsResourceToDbForSeed(resource);
+    const error = await writeSeedRow(
+      supabase,
+      'cms_resources',
+      'slug',
+      resource.slug,
+      payload,
+      action,
+    );
 
     if (error) {
+      result.resources[action === 'insert' ? 'inserted' : 'updated'] -= 1;
       result.errors.push(`resource ${resource.slug}: ${error.message}`);
       continue;
     }
 
-    if (action === 'insert') {
-      result.resources.inserted += 1;
-      await logSeedAudit('seed_insert', 'resource', resource.slug, { force });
-    } else {
-      result.resources.updated += 1;
-      await logSeedAudit('seed_update', 'resource', resource.slug, { force });
-    }
+    await logSeedAudit(
+      action === 'insert' ? 'seed_insert' : 'seed_update',
+      'resource',
+      resource.slug,
+      { force },
+    );
   }
 
   for (const post of seedCmsBlogPosts()) {
     const existing = blogBySlug.get(post.slug);
     const action = planSeedRowAction(Boolean(existing), {
       force,
-      edited: existing ? isEditedBlogPost(existing as DbCmsBlogPost) : false,
+      edited: existing ? isEditedBlogPost(existing) : false,
     });
+    recordSeedCount(result.blogPosts, action);
 
-    if (action === 'skip') {
-      result.blogPosts.skipped += 1;
-      continue;
-    }
+    if (action === 'skip') continue;
 
     const payload = mapCmsBlogPostToDbForSeed(post);
-    const { error } = await supabase
-      .from('cms_blog_posts')
-      .upsert(payload, { onConflict: 'slug' });
+    const error = await writeSeedRow(
+      supabase,
+      'cms_blog_posts',
+      'slug',
+      post.slug,
+      payload,
+      action,
+    );
 
     if (error) {
+      result.blogPosts[action === 'insert' ? 'inserted' : 'updated'] -= 1;
       result.errors.push(`blog ${post.slug}: ${error.message}`);
       continue;
     }
 
-    if (action === 'insert') {
-      result.blogPosts.inserted += 1;
-      await logSeedAudit('seed_insert', 'blog', post.slug, { force });
-    } else {
-      result.blogPosts.updated += 1;
-      await logSeedAudit('seed_update', 'blog', post.slug, { force });
-    }
+    await logSeedAudit(
+      action === 'insert' ? 'seed_insert' : 'seed_update',
+      'blog',
+      post.slug,
+      { force },
+    );
   }
 
   console.info('[cms-seed] Supabase seed sync complete', {
@@ -207,15 +255,6 @@ export async function syncSupabaseCmsSeed(
   });
 
   return result;
-}
-
-/** Omits columns that are not present in the current Supabase schema. */
-function mapCmsBlogPostToDbForSeed(post: CmsBlogPost) {
-  const { related_blog_posts: _relatedBlogPosts, ...payload } =
-    mapCmsBlogPostToDb(post) as ReturnType<typeof mapCmsBlogPostToDb> & {
-      related_blog_posts?: string[];
-    };
-  return payload;
 }
 
 export type { SeedRowAction } from '@/lib/admin/content/supabase-seed-policy';

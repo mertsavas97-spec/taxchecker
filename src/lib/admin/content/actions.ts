@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 
-import { requireAdminSession } from '@/lib/admin/auth/server';
+import { isAdminAuthenticated } from '@/lib/admin/auth/server';
 import { contentRegistry } from '@/lib/admin/content/registry';
 import { isSupabaseStoreActive } from '@/lib/admin/content/storage';
 import {
@@ -12,7 +12,10 @@ import {
 import type { BlogPostInput, CmsContentStatus } from '@/lib/admin/content/types';
 
 async function assertAdmin() {
-  await requireAdminSession();
+  const authenticated = await isAdminAuthenticated();
+  if (!authenticated) {
+    throw new Error('Admin authentication required.');
+  }
 }
 
 function revalidateBlogPaths(slug?: string) {

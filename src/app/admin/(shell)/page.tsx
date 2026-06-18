@@ -3,6 +3,7 @@ import { AdminPageHeader } from '@/components/admin/admin-page-header';
 import { AdminRecentList } from '@/components/admin/admin-recent-list';
 import { AdminStatCard } from '@/components/admin/admin-stat-card';
 import { AdminStatusBadge } from '@/components/admin/admin-status-badge';
+import { SeedSyncPanel } from '@/components/admin/seed-sync-panel';
 import {
   Table,
   TableBody,
@@ -12,6 +13,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { contentRegistry } from '@/lib/admin/content/registry';
+import { getConfiguredStoreDriver, getStoreDriverLabel } from '@/lib/admin/content/storage';
 
 export default async function AdminDashboardPage() {
   const stats = await contentRegistry.getDashboardStats();
@@ -43,6 +45,8 @@ export default async function AdminDashboardPage() {
         title="Dashboard"
         description="Content operations overview for TaxChecker.app. Store mode is shown in the header badge."
       />
+
+      <SeedSyncPanel storeLabel={getStoreDriverLabel(getConfiguredStoreDriver())} />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <AdminStatCard label="Total calculators" value={stats.totalCalculators} />

@@ -10,6 +10,7 @@ import type {
   CmsDashboardStats,
   CmsResource,
   CmsSeoIssue,
+  ResourceInput,
 } from '@/lib/admin/content/types';
 
 function todayIsoDate(): string {
@@ -48,6 +49,44 @@ function createBlogPostRecord(input: BlogPostInput): CmsBlogPost {
   };
 }
 
+function defaultResourceRoute(slug: string): string {
+  if (slug === 'taxchecker-methodology') return '/methodology';
+  return `/resources/${slug}`;
+}
+
+function createResourceRecord(input: ResourceInput): CmsResource {
+  const now = todayIsoDate();
+  const id = input.id ?? input.slug;
+  const route = input.route?.trim() || defaultResourceRoute(input.slug);
+
+  return {
+    type: 'resource',
+    id,
+    slug: input.slug,
+    title: input.title,
+    shortTitle: input.shortTitle || input.title,
+    description: input.description,
+    content: input.content,
+    status: input.status,
+    category: input.category,
+    route,
+    readingTime: input.readingTime || '5 min read',
+    taxYear: input.taxYear,
+    lastReviewed: input.lastReviewed,
+    sourceIds: input.sourceIds,
+    publishedAt: input.status === 'published' ? now : null,
+    updatedAt: now,
+    seoTitle: input.seoTitle,
+    seoDescription: input.seoDescription,
+    canonicalUrl: input.canonicalUrl ?? null,
+    ogImage: input.ogImage ?? null,
+    featured: input.featured,
+    relatedCalculatorSlugs: input.relatedCalculatorSlugs,
+    relatedResourceSlugs: input.relatedResourceSlugs,
+    relatedBlogSlugs: input.relatedBlogSlugs,
+  };
+}
+
 class ContentRegistryStore {
   private get store() {
     return getContentStore();
@@ -60,6 +99,11 @@ class ContentRegistryStore {
   async getResourceById(id: string): Promise<CmsResource | undefined> {
     const resources = await this.getResources();
     return resources.find((resource) => resource.id === id);
+  }
+
+  async getResourceBySlug(slug: string): Promise<CmsResource | undefined> {
+    const resources = await this.getResources();
+    return resources.find((resource) => resource.slug === slug);
   }
 
   async getBlogPosts(): Promise<CmsBlogPost[]> {
@@ -111,6 +155,73 @@ class ContentRegistryStore {
     }
 
     return (await this.getResourceById(id)) ?? null;
+  }
+
+  async upsertResource(input: ResourceInput): Promise<CmsResource> {
+    const existing = input.id ? await this.getResourceById(input.id) : undefined;
+    const now = todayIsoDate();
+    const slug = input.slug.trim();
+    const route = input.route?.trim() || defaultResourceRoute(slug);
+
+    const resource: CmsResource = {
+      ...(existing ?? createResourceRecord(input)),
+      slug,
+      title: input.title,
+      shortTitle: input.shortTitle || input.title,
+      description: input.description,
+      content: input.content,
+      status: input.status,
+      category: input.category,
+      route,
+      readingTime: input.readingTime || existing?.readingTime || '5 min read',
+      taxYear: input.taxYear,
+      lastReviewed: input.lastReviewed,
+      sourceIds: input.sourceIds,
+      seoTitle: input.seoTitle,
+      seoDescription: input.seoDescription,
+      canonicalUrl: input.canonicalUrl ?? existing?.canonicalUrl ?? null,
+      ogImage: input.ogImage ?? existing?.ogImage ?? null,
+      featured: input.featured,
+      relatedCalculatorSlugs: input.relatedCalculatorSlugs,
+      relatedResourceSlugs: input.relatedResourceSlugs,
+      relatedBlogSlugs: input.relatedBlogSlugs,
+      updatedAt: now,
+      publishedAt:
+        input.status === 'published'
+          ? (existing?.publishedAt ?? now)
+          : input.status === 'draft'
+            ? null
+            : (existing?.publishedAt ?? null),
+    };
+
+    await this.store.saveResource(resource);
+    return resource;
+  }
+
+  async createResource(input: {
+    title: string;
+    slug: string;
+    category: string;
+  }): Promise<CmsResource> {
+    return this.upsertResource({
+      slug: input.slug,
+      title: input.title,
+      shortTitle: input.title,
+      description: '',
+      content: '',
+      status: 'draft',
+      category: input.category,
+      readingTime: '5 min read',
+      taxYear: null,
+      lastReviewed: null,
+      sourceIds: [],
+      seoTitle: '',
+      seoDescription: '',
+      featured: false,
+      relatedCalculatorSlugs: [],
+      relatedResourceSlugs: [],
+      relatedBlogSlugs: [],
+    });
   }
 
   async updateBlogPostStatus(
@@ -311,6 +422,7 @@ function getRegistry(): ContentRegistryStore {
 export const contentRegistry = {
   getResources: () => getRegistry().getResources(),
   getResourceById: (id: string) => getRegistry().getResourceById(id),
+  getResourceBySlug: (slug: string) => getRegistry().getResourceBySlug(slug),
   getBlogPosts: () => getRegistry().getBlogPosts(),
   getBlogPostById: (id: string) => getRegistry().getBlogPostById(id),
   getBlogPostBySlug: (slug: string) => getRegistry().getBlogPostBySlug(slug),
@@ -321,6 +433,9 @@ export const contentRegistry = {
     getRegistry().saveCalculatorMetadata(record),
   updateResourceStatus: (id: string, status: CmsContentStatus) =>
     getRegistry().updateResourceStatus(id, status),
+  upsertResource: (input: ResourceInput) => getRegistry().upsertResource(input),
+  createResource: (input: { title: string; slug: string; category: string }) =>
+    getRegistry().createResource(input),
   updateBlogPostStatus: (id: string, status: CmsContentStatus) =>
     getRegistry().updateBlogPostStatus(id, status),
   upsertBlogPost: (input: BlogPostInput) => getRegistry().upsertBlogPost(input),

@@ -20,15 +20,19 @@ import {
   getStandardDeductionRows,
 } from '@/lib/resources/reference-data';
 import { createResourcePageMetadata } from '@/lib/resources/create-resource-page';
+import { renderPublishedCmsResourcePageIfPresent } from '@/lib/resources/cms-resource-page';
 import { FILING_STATUSES, taxYear2025 } from '@/lib/tax-engine';
 
 const SLUG = 'tax-brackets-2025';
 
-export function generateMetadata() {
+export async function generateMetadata() {
   return createResourcePageMetadata(SLUG);
 }
 
 export default async function TaxBrackets2025Page() {
+  const cmsPage = await renderPublishedCmsResourcePageIfPresent(SLUG);
+  if (cmsPage) return cmsPage;
+
   const faqs = getTaxBrackets2025Faqs();
   const sources = getTaxBrackets2025Sources();
   const standardDeductionRows = getStandardDeductionRows(taxYear2025);

@@ -25,6 +25,7 @@ export interface DbCmsResource {
   og_image: string | null;
   related_calculators: string[] | null;
   related_resources: string[] | null;
+  related_blog_slugs: string[] | null;
   source_ids: string[] | null;
   featured: boolean | null;
   route: string | null;
@@ -105,6 +106,9 @@ export function mapDbResourceToCms(row: DbCmsResource): CmsResource {
     featured: row.featured ?? false,
     relatedCalculatorSlugs: row.related_calculators ?? [],
     relatedResourceSlugs: row.related_resources ?? [],
+    relatedBlogSlugs: row.related_blog_slugs ?? [],
+    canonicalUrl: row.canonical_url,
+    ogImage: row.og_image,
     description: row.description ?? undefined,
     content: row.content ?? undefined,
     readingTime: row.reading_time ?? undefined,
@@ -122,7 +126,7 @@ export function mapCmsResourceToDb(
     slug: resource.slug,
     title: resource.title,
     short_title: resource.shortTitle,
-    description: resource.seoDescription,
+    description: resource.description ?? resource.seoDescription,
     content: resource.content ?? null,
     category: resource.category,
     status: resource.status,
@@ -132,10 +136,11 @@ export function mapCmsResourceToDb(
     published_at: resource.publishedAt,
     seo_title: resource.seoTitle,
     seo_description: resource.seoDescription,
-    canonical_url: null,
-    og_image: null,
+    canonical_url: resource.canonicalUrl,
+    og_image: resource.ogImage,
     related_calculators: resource.relatedCalculatorSlugs,
     related_resources: resource.relatedResourceSlugs,
+    related_blog_slugs: resource.relatedBlogSlugs,
     source_ids: resource.sourceIds ?? [],
     featured: resource.featured,
     route: resource.route,

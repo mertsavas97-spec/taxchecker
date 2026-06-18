@@ -9,7 +9,7 @@ import {
   syncSupabaseCmsSeed,
   type SeedSyncResult,
 } from '@/lib/admin/content/supabase-seed';
-import type { BlogPostInput } from '@/lib/admin/content/types';
+import type { BlogPostInput, ResourceInput } from '@/lib/admin/content/types';
 
 async function assertAdmin() {
   const authenticated = await isAdminAuthenticated();
@@ -30,7 +30,7 @@ function revalidateBlogPaths(slug?: string) {
   }
 }
 
-function revalidateResourcePaths(slug?: string) {
+function revalidateResourcePaths(slug?: string, previousSlug?: string) {
   revalidatePath('/admin/resources');
   revalidatePath('/admin');
   revalidatePath('/admin/seo');
@@ -39,8 +39,15 @@ function revalidateResourcePaths(slug?: string) {
   revalidatePath('/sitemap.xml');
   if (slug) {
     const route =
-      slug === 'methodology' ? '/methodology' : `/resources/${slug}`;
+      slug === 'taxchecker-methodology' ? '/methodology' : `/resources/${slug}`;
     revalidatePath(route);
+  }
+  if (previousSlug && previousSlug !== slug) {
+    const previousRoute =
+      previousSlug === 'taxchecker-methodology'
+        ? '/methodology'
+        : `/resources/${previousSlug}`;
+    revalidatePath(previousRoute);
   }
 }
 
@@ -121,4 +128,27 @@ export async function saveBlogPostAction(input: BlogPostInput) {
     revalidatePath(`/admin/blog/${input.id}`);
   }
   return post;
+}
+
+export async function createResourceAction(input: {
+  title: string;
+  slug: string;
+  category: string;
+}) {
+  await assertAdmin();
+  const resource = await contentRegistry.createResource(input);
+  revalidateResourcePaths(resource.slug);
+  return resource;
+}
+
+export async function saveResourceAction(input: ResourceInput) {
+  await assertAdmin();
+  const existing = input.id ? await contentRegistry.getResourceById(input.id) : undefined;
+  const previousSlug = existing?.slug;
+  const resource = await contentRegistry.upsertResource(input);
+  revalidateResourcePaths(resource.slug, previousSlug);
+  if (input.id) {
+    revalidatePath(`/admin/resources/${input.id}`);
+  }
+  return resource;
 }

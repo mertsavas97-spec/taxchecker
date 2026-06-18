@@ -25,13 +25,39 @@ export interface CmsResource extends CmsContentBase {
   featured: boolean;
   relatedCalculatorSlugs: string[];
   relatedResourceSlugs: string[];
-  relatedBlogSlugs?: string[];
+  relatedBlogSlugs: string[];
+  canonicalUrl: string | null;
+  ogImage: string | null;
   /** Optional body copy when stored in Supabase */
   content?: string;
   description?: string;
   readingTime?: string;
   lastReviewed?: string | null;
   sourceIds?: string[];
+}
+
+export interface ResourceInput {
+  id?: string;
+  slug: string;
+  title: string;
+  shortTitle: string;
+  description: string;
+  content: string;
+  status: CmsContentStatus;
+  category: string;
+  route?: string;
+  readingTime: string;
+  taxYear: number | null;
+  lastReviewed: string | null;
+  sourceIds: string[];
+  seoTitle: string;
+  seoDescription: string;
+  canonicalUrl?: string | null;
+  ogImage?: string | null;
+  featured: boolean;
+  relatedCalculatorSlugs: string[];
+  relatedResourceSlugs: string[];
+  relatedBlogSlugs: string[];
 }
 
 export interface CmsBlogPost extends CmsContentBase {

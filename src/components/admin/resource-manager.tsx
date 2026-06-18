@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useMemo, useState, useTransition } from 'react';
 
 import { AdminDataTable } from '@/components/admin/admin-data-table';
@@ -18,13 +19,13 @@ import {
 import {
   archiveResourceAction,
   draftResourceAction,
-  publishResourceAction,
 } from '@/lib/admin/content/actions';
 import type { CmsResource } from '@/lib/admin/content/types';
 
 const ALL = '__all__';
 
 export function ResourceManager({ resources }: { resources: CmsResource[] }) {
+  const router = useRouter();
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>(ALL);
   const [categoryFilter, setCategoryFilter] = useState<string>(ALL);
@@ -53,6 +54,7 @@ export function ResourceManager({ resources }: { resources: CmsResource[] }) {
   function runAction(action: (id: string) => Promise<void>, id: string) {
     startTransition(async () => {
       await action(id);
+      router.refresh();
     });
   }
 
@@ -61,6 +63,11 @@ export function ResourceManager({ resources }: { resources: CmsResource[] }) {
       <AdminPageHeader
         title="Resources"
         description="Manage resource article metadata and publishing status."
+        actions={
+          <Button size="sm" asChild>
+            <Link href="/admin/resources/new">Create resource</Link>
+          </Button>
+        }
       />
 
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
@@ -121,6 +128,18 @@ export function ResourceManager({ resources }: { resources: CmsResource[] }) {
             render: (row) => <AdminStatusBadge status={row.status} />,
           },
           {
+            key: 'taxYear',
+            header: 'Tax year',
+            render: (row) => row.taxYear ?? '—',
+          },
+          {
+            key: 'lastReviewed',
+            header: 'Last reviewed',
+            render: (row) => (
+              <span className="text-muted-foreground">{row.lastReviewed ?? '—'}</span>
+            ),
+          },
+          {
             key: 'updated',
             header: 'Updated',
             render: (row) => (
@@ -136,16 +155,6 @@ export function ResourceManager({ resources }: { resources: CmsResource[] }) {
                 <Button variant="ghost" size="sm" asChild>
                   <Link href={`/admin/resources/${row.id}`}>Edit</Link>
                 </Button>
-                {row.status !== 'published' ? (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={pending}
-                    onClick={() => runAction(publishResourceAction, row.id)}
-                  >
-                    Publish
-                  </Button>
-                ) : null}
                 {row.status !== 'archived' ? (
                   <Button
                     variant="ghost"
@@ -155,8 +164,7 @@ export function ResourceManager({ resources }: { resources: CmsResource[] }) {
                   >
                     Archive
                   </Button>
-                ) : null}
-                {row.status === 'archived' ? (
+                ) : (
                   <Button
                     variant="ghost"
                     size="sm"
@@ -165,7 +173,7 @@ export function ResourceManager({ resources }: { resources: CmsResource[] }) {
                   >
                     Restore
                   </Button>
-                ) : null}
+                )}
               </div>
             ),
           },

@@ -37,6 +37,12 @@ export function seedCmsResources(): CmsResource[] {
     relatedCalculatorSlugs: [...resource.relatedCalculatorSlugs],
     relatedResourceSlugs: [...resource.relatedResourceSlugs],
     relatedBlogSlugs: [...resource.relatedBlogSlugs],
+    sourceIds: resource.sourceIds ?? [],
+    lastReviewed: resource.lastReviewed ?? resource.lastUpdated,
+    readingTime: resource.readingTime,
+    description: resource.description,
+    canonicalUrl: null,
+    ogImage: null,
   }));
 }
 

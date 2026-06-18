@@ -16,14 +16,18 @@ import {
   formatPercentFromConfig,
 } from '@/lib/resources/reference-data';
 import { createResourcePageMetadata } from '@/lib/resources/create-resource-page';
+import { renderPublishedCmsResourcePageIfPresent } from '@/lib/resources/cms-resource-page';
 
 const SLUG = 'self-employment-tax-guide';
 
-export function generateMetadata() {
+export async function generateMetadata() {
   return createResourcePageMetadata(SLUG);
 }
 
 export default async function SelfEmploymentTaxGuidePage() {
+  const cmsPage = await renderPublishedCmsResourcePageIfPresent(SLUG);
+  if (cmsPage) return cmsPage;
+
   const rates = getSelfEmploymentTaxGuideRates();
   const faqs = getSelfEmploymentTaxGuideFaqs();
   const sources = getSelfEmploymentTaxGuideSources();

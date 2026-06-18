@@ -1,7 +1,9 @@
+import type { SourceReferenceItem } from '@/components/calculator/source-section';
+import type { FaqItem } from '@/components/content/faq-block';
 import { PageContainer, Section } from '@/components/layout/page-container';
 import { SiteShell } from '@/components/layout/site-shell';
 import { RelatedContentBlock } from '@/components/content/related-content-block';
-import { ResourceFaq, type FaqItem } from '@/components/resources/resource-faq';
+import { ResourceFaq } from '@/components/resources/resource-faq';
 import { ResourceHero, ResourceMetadataBar } from '@/components/resources/resource-hero';
 import { ResourceArticleDetails, ResourceSidebar } from '@/components/resources/resource-sidebar';
 import { ResourceSources } from '@/components/resources/resource-sources';
@@ -11,13 +13,12 @@ import {
   MobileTableOfContents,
   TableOfContents,
 } from '@/components/resources/table-of-contents';
-import type { SourceReferenceItem } from '@/components/calculator/source-section';
 import { JsonLd } from '@/components/seo/json-ld';
 import { site } from '@/config/site';
 import { getPublishedBlogPostsPublic } from '@/lib/cms/public-read';
 import { buildRelatedContentForResource } from '@/lib/conversion/related-content';
 import { buildResourcePageJsonLd } from '@/lib/resources/create-resource-page';
-import { getResourceOrThrow } from '@/lib/resources/related-links';
+import { getPublishedResourceOrThrow } from '@/lib/resources/related-links';
 import { formatResourceMetadataLine } from '@/lib/resources/metadata-labels';
 
 export async function ResourceArticleLayout({
@@ -33,10 +34,10 @@ export async function ResourceArticleLayout({
   sources: SourceReferenceItem[];
   sourceNotice?: string;
 }) {
-  const resource = getResourceOrThrow(slug);
+  const resource = await getPublishedResourceOrThrow(slug);
   const publishedPosts = await getPublishedBlogPostsPublic();
-  const related = buildRelatedContentForResource(slug, publishedPosts);
-  const jsonLd = buildResourcePageJsonLd(slug, faqs);
+  const related = buildRelatedContentForResource(slug, publishedPosts, resource);
+  const jsonLd = await buildResourcePageJsonLd(slug, faqs);
 
   return (
     <SiteShell>

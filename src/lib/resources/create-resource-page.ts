@@ -1,21 +1,21 @@
 import type { Metadata } from 'next';
 
-import { getResourceOrThrow } from '@/lib/resources/related-links';
+import type { FaqItem } from '@/components/content/faq-block';
 import { ogPaths } from '@/lib/og/paths';
+import { getPublishedResourceOrThrow, getResourceOrThrow } from '@/lib/resources/related-links';
 import { buildResourceMetadata } from '@/lib/seo/metadata';
 import { buildArticleSchema, buildFaqSchema, buildResourceBreadcrumbs } from '@/lib/seo/schema';
-import type { FaqItem } from '@/components/content/faq-block';
 
-export function createResourcePageMetadata(slug: string): Metadata {
-  const resource = getResourceOrThrow(slug);
+export async function createResourcePageMetadata(slug: string): Promise<Metadata> {
+  const resource = await getPublishedResourceOrThrow(slug);
   return buildResourceMetadata(resource);
 }
 
-export function buildResourcePageJsonLd(
+export async function buildResourcePageJsonLd(
   slug: string,
   faqs: FaqItem[],
-): Record<string, unknown>[] {
-  const resource = getResourceOrThrow(slug);
+): Promise<Record<string, unknown>[]> {
+  const resource = await getPublishedResourceOrThrow(slug);
 
   const schemas: Record<string, unknown>[] = [
     buildResourceBreadcrumbs(resource.shortTitle, resource.route),
@@ -35,4 +35,9 @@ export function buildResourcePageJsonLd(
   }
 
   return schemas;
+}
+
+/** Sync metadata for static registry pages without CMS overlay. */
+export function createResourcePageMetadataSync(slug: string): Metadata {
+  return buildResourceMetadata(getResourceOrThrow(slug));
 }

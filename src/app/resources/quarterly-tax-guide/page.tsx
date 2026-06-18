@@ -18,15 +18,19 @@ import {
   getQuarterlyDueDateRows,
 } from '@/lib/resources/reference-data';
 import { createResourcePageMetadata } from '@/lib/resources/create-resource-page';
+import { renderPublishedCmsResourcePageIfPresent } from '@/lib/resources/cms-resource-page';
 import { taxYear2025 } from '@/lib/tax-engine';
 
 const SLUG = 'quarterly-tax-guide';
 
-export function generateMetadata() {
+export async function generateMetadata() {
   return createResourcePageMetadata(SLUG);
 }
 
 export default async function QuarterlyTaxGuidePage() {
+  const cmsPage = await renderPublishedCmsResourcePageIfPresent(SLUG);
+  if (cmsPage) return cmsPage;
+
   const faqs = getQuarterlyTaxGuideFaqs();
   const sources = getQuarterlyTaxGuideSources();
   const safeHarbor = getQuarterlyTaxGuideSafeHarbor();

@@ -9,6 +9,7 @@ export default defineConfig({
       'src/lib/og/**/*.test.ts',
       'src/lib/seo/**/*.test.ts',
       'src/lib/admin/content/**/*.test.ts',
+      'src/lib/admin/resources/**/*.test.ts',
       'src/lib/cms/**/*.test.ts',
     ],
   },

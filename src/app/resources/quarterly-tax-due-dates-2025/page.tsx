@@ -13,15 +13,19 @@ import {
 } from '@/lib/resources/content/quarterly-tax-due-dates-2025';
 import { getQuarterlyDueDateRows } from '@/lib/resources/reference-data';
 import { createResourcePageMetadata } from '@/lib/resources/create-resource-page';
+import { renderPublishedCmsResourcePageIfPresent } from '@/lib/resources/cms-resource-page';
 import { taxYear2025 } from '@/lib/tax-engine';
 
 const SLUG = 'quarterly-tax-due-dates-2025';
 
-export function generateMetadata() {
+export async function generateMetadata() {
   return createResourcePageMetadata(SLUG);
 }
 
 export default async function QuarterlyTaxDueDates2025Page() {
+  const cmsPage = await renderPublishedCmsResourcePageIfPresent(SLUG);
+  if (cmsPage) return cmsPage;
+
   const faqs = getQuarterlyTaxDueDates2025Faqs();
   const sources = getQuarterlyTaxDueDates2025Sources();
   const dueDates = getQuarterlyDueDateRows(taxYear2025);

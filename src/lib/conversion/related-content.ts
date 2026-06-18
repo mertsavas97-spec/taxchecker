@@ -43,8 +43,9 @@ export function buildCalculatorPageRelatedContent(
 export function buildRelatedContentForResource(
   slug: string,
   publishedPosts: CmsBlogPost[] = [],
+  resourceOverride?: ReturnType<typeof getResourceBySlug>,
 ): RelatedContentGroups {
-  const resource = getResourceBySlug(slug);
+  const resource = resourceOverride ?? getResourceBySlug(slug);
   if (!resource) {
     return { calculators: [], resources: [], articles: [] };
   }

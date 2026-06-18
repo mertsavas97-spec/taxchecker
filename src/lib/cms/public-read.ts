@@ -25,51 +25,9 @@ import {
 import type { CmsBlogPost, CmsResource } from '@/lib/admin/content/types';
 import { createClient } from '@/lib/supabase/server';
 
-function cmsResourceToDefinition(resource: CmsResource): ResourceDefinition {
-  const staticResource = getResourceBySlug(resource.slug);
-
-  if (staticResource) {
-    return {
-      ...staticResource,
-      title: resource.title,
-      shortTitle: resource.shortTitle,
-      description: resource.seoDescription || resource.description || staticResource.description,
-      status: resource.status === 'published' ? 'published' : 'coming_soon',
-      lastUpdated: resource.updatedAt,
-      lastReviewed: resource.lastReviewed ?? staticResource.lastReviewed,
-      featured: resource.featured,
-      relatedCalculatorSlugs: resource.relatedCalculatorSlugs,
-      relatedResourceSlugs: resource.relatedResourceSlugs,
-      relatedBlogSlugs:
-        resource.relatedBlogSlugs ?? staticResource.relatedBlogSlugs,
-      route: resource.route,
-      taxYear: resource.taxYear ?? staticResource.taxYear,
-      readingTime: resource.readingTime ?? staticResource.readingTime,
-    };
-  }
-
-  return {
-    slug: resource.slug,
-    title: resource.title,
-    shortTitle: resource.shortTitle,
-    description: resource.seoDescription || resource.description || '',
-    category: 'guides',
-    status: 'published',
-    readingTime: resource.readingTime ?? '5 min read',
-    lastReviewed: resource.lastReviewed ?? resource.updatedAt,
-    lastUpdated: resource.updatedAt,
-    taxYear: resource.taxYear ?? undefined,
-    featured: resource.featured,
-    relatedCalculatorSlugs: resource.relatedCalculatorSlugs,
-    relatedResourceSlugs: resource.relatedResourceSlugs,
-    relatedBlogSlugs: resource.relatedBlogSlugs ?? [],
-    primaryKeyword: resource.title,
-    secondaryKeywords: [],
-    route: resource.route,
-    sourceIds: resource.sourceIds ?? [],
-  };
-}
-
+import {
+  cmsResourceToPublicDefinition,
+} from '@/lib/resources/public-definition';
 async function fetchPublishedBlogPostsFromSupabase(): Promise<CmsBlogPost[] | null> {
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -135,6 +93,50 @@ export async function getPublishedBlogPostBySlugPublic(
   return posts.find((post) => post.slug === slug);
 }
 
+function cmsResourceToDefinition(resource: CmsResource): ResourceDefinition {
+  return cmsResourceToPublicDefinition(resource);
+}
+
+export async function getPublishedResourceBySlugPublic(
+  slug: string,
+): Promise<CmsResource | undefined> {
+  if (isSupabaseStoreActive()) {
+    try {
+      const remote = await fetchPublishedResourcesFromSupabase();
+      if (shouldUseRemotePublishedFallback(remote)) {
+        return remote.find((resource) => resource.slug === slug);
+      }
+    } catch {
+      // Fall through to registry/static fallback.
+    }
+  }
+
+  const cmsResources = await contentRegistry.getResources();
+  const published = cmsResources.filter((resource) => resource.status === 'published');
+  const match = published.find((resource) => resource.slug === slug);
+  if (match) return match;
+
+  const seeded = seedCmsResources()
+    .filter((resource) => resource.status === 'published')
+    .find((resource) => resource.slug === slug);
+
+  return seeded;
+}
+
+export async function getPublishedResourceDefinitionBySlugPublic(
+  slug: string,
+): Promise<ResourceDefinition | undefined> {
+  const cmsResource = await getPublishedResourceBySlugPublic(slug);
+  if (cmsResource) {
+    return cmsResourceToDefinition(cmsResource);
+  }
+
+  const staticResource = getStaticPublishedResources().find(
+    (resource) => resource.slug === slug,
+  );
+  return staticResource;
+}
+
 export async function getFeaturedPublishedBlogPostPublic(): Promise<CmsBlogPost | undefined> {
   const posts = await getPublishedBlogPostsPublic();
   return posts.find((post) => post.featured);
@@ -148,10 +150,19 @@ export async function getHubResourcesPublic(): Promise<ResourceDefinition[]> {
     if (cms.length === 0) return staticAll;
 
     const cmsBySlug = new Map(cms.map((resource) => [resource.slug, resource]));
-    return staticAll.map((resource) => {
+    const merged = staticAll.map((resource) => {
       const cmsRow = cmsBySlug.get(resource.slug);
       return cmsRow ? cmsResourceToDefinition(cmsRow) : resource;
     });
+
+    const staticSlugs = new Set(staticAll.map((resource) => resource.slug));
+    const cmsOnlyPublished = cms
+      .filter((resource) => resource.status === 'published' && !staticSlugs.has(resource.slug))
+      .map(cmsResourceToDefinition);
+
+    return [...merged, ...cmsOnlyPublished].sort((left, right) =>
+      left.title.localeCompare(right.title),
+    );
   } catch {
     return staticAll;
   }

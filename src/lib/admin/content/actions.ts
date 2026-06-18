@@ -9,7 +9,7 @@ import {
   syncSupabaseCmsSeed,
   type SeedSyncResult,
 } from '@/lib/admin/content/supabase-seed';
-import type { BlogPostInput, CmsContentStatus } from '@/lib/admin/content/types';
+import type { BlogPostInput } from '@/lib/admin/content/types';
 
 async function assertAdmin() {
   const authenticated = await isAdminAuthenticated();
@@ -122,5 +122,3 @@ export async function saveBlogPostAction(input: BlogPostInput) {
   }
   return post;
 }
-
-export type { CmsContentStatus };

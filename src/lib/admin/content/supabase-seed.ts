@@ -256,6 +256,3 @@ export async function syncSupabaseCmsSeed(
 
   return result;
 }
-
-export type { SeedRowAction } from '@/lib/admin/content/supabase-seed-policy';
-export { shouldUseRemotePublishedFallback } from '@/lib/admin/content/supabase-seed-policy';

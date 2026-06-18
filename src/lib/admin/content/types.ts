@@ -1,7 +1,9 @@
 /** CMS lifecycle status — distinct from public site `published | coming_soon`. */
-export type CmsContentStatus = 'draft' | 'published' | 'archived';
+export const CMS_CONTENT_STATUSES = ['draft', 'published', 'archived'] as const;
+export type CmsContentStatus = (typeof CMS_CONTENT_STATUSES)[number];
 
-export type CmsContentType = 'resource' | 'blog';
+export const CMS_CONTENT_TYPES = ['resource', 'blog'] as const;
+export type CmsContentType = (typeof CMS_CONTENT_TYPES)[number];
 
 export interface CmsContentBase {
   id: string;

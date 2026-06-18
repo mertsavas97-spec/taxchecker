@@ -20,7 +20,7 @@ import {
   draftResourceAction,
   publishResourceAction,
 } from '@/lib/admin/content/actions';
-import type { CmsContentStatus, CmsResource } from '@/lib/admin/content/types';
+import type { CmsResource } from '@/lib/admin/content/types';
 
 const ALL = '__all__';
 

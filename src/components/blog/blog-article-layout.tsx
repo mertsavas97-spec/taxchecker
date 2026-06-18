@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { CalendarIcon, ClockIcon, UserIcon } from 'lucide-react';
 
 import { RelatedContentBlock } from '@/components/content/related-content-block';
+import { FaqBlock } from '@/components/content/faq-block';
 import { PageContainer, Section } from '@/components/layout/page-container';
 import { SiteShell } from '@/components/layout/site-shell';
 import { Breadcrumbs } from '@/components/navigation/breadcrumbs';
@@ -9,13 +10,10 @@ import { JsonLd } from '@/components/seo/json-ld';
 import { site } from '@/config/site';
 import type { CmsBlogPost } from '@/lib/admin/content/types';
 import { BlogContentParagraph } from '@/lib/blog/content';
+import { buildBlogArticleJsonLd, getPublishedBlogFaqs } from '@/lib/blog/blog-faq-public';
 import { getBlogPostPath, isTaxRelatedBlogPost } from '@/lib/blog/paths';
 import { getPublishedBlogPostsPublic } from '@/lib/cms/public-read';
 import { buildRelatedContentForBlogPost } from '@/lib/conversion/related-content';
-import {
-  buildBlogPostingSchema,
-  buildBlogPostBreadcrumbs,
-} from '@/lib/seo/schema';
 import { cn } from '@/lib/utils';
 
 function BlogHero({ post }: { post: CmsBlogPost }) {
@@ -73,19 +71,9 @@ export async function BlogArticleLayout({ post }: { post: CmsBlogPost }) {
   const related = buildRelatedContentForBlogPost(post, publishedPosts);
 
   const showDisclaimer = isTaxRelatedBlogPost(post);
+  const faqs = getPublishedBlogFaqs(post);
 
-  const jsonLd = [
-    buildBlogPostBreadcrumbs(post.title, path),
-    buildBlogPostingSchema({
-      title: post.seoTitle || post.title,
-      description: post.seoDescription || post.excerpt,
-      path,
-      publishedAt: post.publishedAt ?? post.updatedAt,
-      modifiedAt: post.updatedAt,
-      authorName: post.authorName ?? site.organization.name,
-      imagePath: post.ogImage ?? undefined,
-    }),
-  ];
+  const jsonLd = buildBlogArticleJsonLd(post, path);
 
   return (
     <SiteShell>
@@ -124,6 +112,15 @@ export async function BlogArticleLayout({ post }: { post: CmsBlogPost }) {
                 resources={related.resources}
                 articles={related.articles}
               />
+
+              {faqs.length > 0 ? (
+                <FaqBlock
+                  title="Frequently asked questions"
+                  description="Common questions about this topic. Answers are general and may not fit every taxpayer situation."
+                  items={faqs}
+                  defaultOpenIndexes={[0]}
+                />
+              ) : null}
 
               {showDisclaimer ? (
                 <div className="space-y-2 border-t border-border/70 pt-4">

@@ -1,11 +1,12 @@
-import type { Metadata } from 'next';
-
 import type { FaqItem } from '@/components/content/faq-block';
 import { ogPaths } from '@/lib/og/paths';
 import { getPublishedResourceBySlugPublic } from '@/lib/cms/public-read';
+import { normalizePublishedFaqs } from '@/lib/cms/faq-utils';
 import { getPublishedResourceOrThrow, getResourceOrThrow } from '@/lib/resources/related-links';
 import { buildResourceMetadata } from '@/lib/seo/metadata';
 import { buildArticleSchema, buildFaqSchema, buildResourceBreadcrumbs } from '@/lib/seo/schema';
+
+import type { Metadata } from 'next';
 
 export async function createResourcePageMetadata(slug: string): Promise<Metadata> {
   const resource = await getPublishedResourceOrThrow(slug);
@@ -22,13 +23,28 @@ function resolveResourceSchemaDates(
   return { datePublished, dateModified };
 }
 
+export async function resolvePublishedResourceFaqs(
+  slug: string,
+  staticFallbackFaqs: FaqItem[] = [],
+): Promise<FaqItem[]> {
+  const cmsResource = await getPublishedResourceBySlugPublic(slug);
+  const cmsFaqs = normalizePublishedFaqs(cmsResource?.faqs);
+
+  if (cmsFaqs.length > 0) {
+    return cmsFaqs;
+  }
+
+  return normalizePublishedFaqs(staticFallbackFaqs);
+}
+
 export async function buildResourcePageJsonLd(
   slug: string,
-  faqs: FaqItem[],
+  staticFallbackFaqs: FaqItem[] = [],
 ): Promise<Record<string, unknown>[]> {
   const resource = await getPublishedResourceOrThrow(slug);
   const cmsResource = await getPublishedResourceBySlugPublic(slug);
   const { datePublished, dateModified } = resolveResourceSchemaDates(resource, cmsResource);
+  const faqs = await resolvePublishedResourceFaqs(slug, staticFallbackFaqs);
 
   const schemas: Record<string, unknown>[] = [
     buildResourceBreadcrumbs(resource.shortTitle, resource.route),

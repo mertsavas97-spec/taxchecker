@@ -43,6 +43,7 @@ export function seedCmsResources(): CmsResource[] {
     description: resource.description,
     canonicalUrl: null,
     ogImage: null,
+    faqs: [],
   }));
 }
 

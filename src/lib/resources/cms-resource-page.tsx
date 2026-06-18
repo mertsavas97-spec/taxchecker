@@ -1,5 +1,3 @@
-import type { FaqItem } from '@/components/content/faq-block';
-import type { SourceReferenceItem } from '@/components/calculator/source-section';
 import { ResourceArticleLayout } from '@/components/resources/resource-article-layout';
 import {
   ResourceParagraph,
@@ -12,10 +10,6 @@ import type { CmsResource } from '@/lib/admin/content/types';
 import { getPublishedResourceBySlugPublic } from '@/lib/cms/public-read';
 import { hasCmsResourceBody } from '@/lib/resources/public-definition';
 import { resolveSourceReferences } from '@/lib/resources/source-references';
-
-function defaultFaqs(): FaqItem[] {
-  return [];
-}
 
 export async function getPublishedCmsResourceForSlug(
   slug: string,
@@ -53,12 +47,11 @@ export async function CmsResourceArticlePage({
   resource: CmsResource;
 }) {
   const sources = resolveSourceReferences(resource.sourceIds ?? []);
-  const faqs = defaultFaqs();
 
   return (
     <ResourceArticleLayout
       slug={slug}
-      faqs={faqs}
+      faqs={[]}
       sources={sources}
       sourceNotice="Sources cited in this resource reference public IRS publications and TaxChecker methodology where applicable."
     >

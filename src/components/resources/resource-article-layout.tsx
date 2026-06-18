@@ -17,7 +17,7 @@ import { JsonLd } from '@/components/seo/json-ld';
 import { site } from '@/config/site';
 import { getPublishedBlogPostsPublic } from '@/lib/cms/public-read';
 import { buildRelatedContentForResource } from '@/lib/conversion/related-content';
-import { buildResourcePageJsonLd } from '@/lib/resources/create-resource-page';
+import { buildResourcePageJsonLd, resolvePublishedResourceFaqs } from '@/lib/resources/create-resource-page';
 import { getPublishedResourceOrThrow } from '@/lib/resources/related-links';
 import { formatResourceMetadataLine } from '@/lib/resources/metadata-labels';
 
@@ -37,6 +37,7 @@ export async function ResourceArticleLayout({
   const resource = await getPublishedResourceOrThrow(slug);
   const publishedPosts = await getPublishedBlogPostsPublic();
   const related = buildRelatedContentForResource(slug, publishedPosts, resource);
+  const resolvedFaqs = await resolvePublishedResourceFaqs(slug, faqs);
   const jsonLd = await buildResourcePageJsonLd(slug, faqs);
 
   return (
@@ -83,7 +84,7 @@ export async function ResourceArticleLayout({
               />
 
               <ResourceTocSection id="faq" label="FAQ" className="space-y-4">
-                <ResourceFaq items={faqs} />
+                <ResourceFaq items={resolvedFaqs} />
               </ResourceTocSection>
 
               <ResourceTocSection id="sources" label="Sources" className="space-y-4">

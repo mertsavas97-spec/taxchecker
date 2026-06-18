@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useMemo, useState, useTransition } from 'react';
 
 import { AdminPageHeader } from '@/components/admin/admin-page-header';
+import { CmsFaqEditor } from '@/components/admin/cms-faq-editor';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -31,6 +32,7 @@ import {
   getResourceEditorSeoChecks,
   resourceEditorSeoScore,
 } from '@/lib/admin/resources/seo-checks';
+import { getCmsFaqEditorGuidance } from '@/lib/admin/cms-faq-guidance';
 import type { CmsContentStatus, CmsResource, ResourceInput } from '@/lib/admin/content/types';
 import { cn } from '@/lib/utils';
 
@@ -75,6 +77,7 @@ function toInput(resource?: CmsResource): ResourceInput {
     relatedCalculatorSlugs: resource?.relatedCalculatorSlugs ?? [],
     relatedResourceSlugs: resource?.relatedResourceSlugs ?? [],
     relatedBlogSlugs: resource?.relatedBlogSlugs ?? [],
+    faqs: resource?.faqs ?? [],
   };
 }
 
@@ -120,6 +123,7 @@ export function ResourceEditor({
 
   const seoChecks = useMemo(() => getResourceEditorSeoChecks(form), [form]);
   const seoScore = useMemo(() => resourceEditorSeoScore(form), [form]);
+  const faqGuidance = useMemo(() => getCmsFaqEditorGuidance(form.faqs), [form.faqs]);
 
   function updateField<K extends keyof ResourceInput>(key: K, value: ResourceInput[K]) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -272,6 +276,18 @@ export function ResourceEditor({
                 </div>
               </div>
             </div>
+          </section>
+
+          <section className="rounded-lg border border-border bg-card p-4 shadow-tc-sm">
+            <h2 className="mb-1 text-sm font-semibold">FAQs (optional)</h2>
+            <p className="mb-4 text-xs text-muted-foreground">
+              CMS FAQs override static resource FAQs only when this list has valid published
+              items. Leave empty to keep existing static FAQ behavior.
+            </p>
+            <CmsFaqEditor
+              faqs={form.faqs}
+              onChange={(faqs) => updateField('faqs', faqs)}
+            />
           </section>
 
           <section className="rounded-lg border border-border bg-card p-4 shadow-tc-sm">
@@ -518,6 +534,25 @@ export function ResourceEditor({
                 >
                   <span>{check.label}</span>
                   <span>{check.passed ? 'OK' : 'Missing'}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          <section className="rounded-lg border border-border bg-card p-4 shadow-tc-sm">
+            <h2 className="mb-3 text-sm font-semibold">FAQ guidance</h2>
+            <ul className="space-y-2">
+              {faqGuidance.map((check) => (
+                <li
+                  key={check.id}
+                  className={cn(
+                    'rounded-md border px-2.5 py-2 text-xs',
+                    check.passed
+                      ? 'border-tc-savings/30 bg-tc-savings-muted/40 text-tc-savings'
+                      : 'border-border bg-muted/30 text-muted-foreground',
+                  )}
+                >
+                  {check.label}
                 </li>
               ))}
             </ul>

@@ -17,6 +17,9 @@ describe('resource mapper round trip', () => {
       canonicalUrl: '/resources/example',
       ogImage: '/og/resources/example.png',
       relatedBlogSlugs: ['self-employment-tax-explained'],
+      faqs: [
+        { question: 'What is SE tax?', answer: 'A federal self-employment tax.' },
+      ],
     };
 
     const dbRow = {
@@ -35,6 +38,7 @@ describe('resource mapper round trip', () => {
     expect(restored.canonicalUrl).toBe(withBody.canonicalUrl);
     expect(restored.ogImage).toBe(withBody.ogImage);
     expect(restored.sourceIds).toEqual(withBody.sourceIds);
+    expect(restored.faqs).toEqual(withBody.faqs);
   });
 });
 

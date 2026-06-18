@@ -2,6 +2,7 @@ import type {
   CmsBlogPost,
   CmsCalculatorRecord,
   CmsContentStatus,
+  CmsFaqItem,
   CmsResource,
 } from '@/lib/admin/content/types';
 import { computeReadingTime } from '@/lib/blog/reading-time';
@@ -32,6 +33,7 @@ export interface DbCmsResource {
   short_title: string | null;
   created_by: string | null;
   updated_by: string | null;
+  faqs?: unknown;
 }
 
 export interface DbCmsBlogPost {
@@ -58,6 +60,7 @@ export interface DbCmsBlogPost {
   related_blog_posts?: string[] | null;
   tax_year: number | null;
   revision: number | null;
+  faqs?: unknown;
 }
 
 export interface DbCmsCalculatorMetadata {
@@ -82,6 +85,17 @@ export function isUuid(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
     value,
   );
+}
+
+function mapDbFaqs(value: unknown): CmsFaqItem[] {
+  if (!Array.isArray(value)) return [];
+
+  return value.flatMap((row) => {
+    if (typeof row !== 'object' || row === null || Array.isArray(row)) return [];
+    const question = typeof row.question === 'string' ? row.question : '';
+    const answer = typeof row.answer === 'string' ? row.answer : '';
+    return [{ question, answer }];
+  });
 }
 
 export function mapDbResourceToCms(row: DbCmsResource): CmsResource {
@@ -114,6 +128,7 @@ export function mapDbResourceToCms(row: DbCmsResource): CmsResource {
     readingTime: row.reading_time ?? undefined,
     lastReviewed: toDateString(row.last_reviewed),
     sourceIds: row.source_ids ?? [],
+    faqs: mapDbFaqs(row.faqs),
   };
 }
 
@@ -145,6 +160,7 @@ export function mapCmsResourceToDb(
     featured: resource.featured,
     route: resource.route,
     updated_by: actorId ?? null,
+    faqs: resource.faqs ?? [],
   };
 }
 
@@ -175,6 +191,7 @@ export function mapDbBlogPostToCms(row: DbCmsBlogPost): CmsBlogPost {
     relatedResources: row.related_resources ?? [],
     relatedBlogPosts: row.related_blog_posts ?? [],
     revision: row.revision ?? 1,
+    faqs: mapDbFaqs(row.faqs),
   };
 }
 
@@ -201,6 +218,7 @@ export function mapCmsBlogPostToDb(post: CmsBlogPost): Partial<DbCmsBlogPost> {
     related_resources: post.relatedResources,
     tax_year: post.taxYear,
     revision: post.revision,
+    faqs: post.faqs ?? [],
   };
 }
 

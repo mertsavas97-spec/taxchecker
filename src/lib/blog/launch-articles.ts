@@ -47,6 +47,7 @@ export function launchBlogPostToCms(input: LaunchBlogPostInput): CmsBlogPost {
     relatedResources: input.relatedResources,
     relatedBlogPosts: input.relatedBlogPosts,
     revision: 1,
+    faqs: [],
   };
 }
 

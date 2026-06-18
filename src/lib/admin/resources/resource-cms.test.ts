@@ -22,6 +22,7 @@ const baseInput: ResourceInput = {
   relatedCalculatorSlugs: ['self-employed-tax-calculator'],
   relatedResourceSlugs: ['quarterly-tax-guide'],
   relatedBlogSlugs: ['self-employment-tax-explained'],
+  faqs: [],
 };
 
 describe('resource editor seo checks', () => {

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useMemo, useState, useTransition } from 'react';
 
 import { AdminPageHeader } from '@/components/admin/admin-page-header';
+import { CmsFaqEditor } from '@/components/admin/cms-faq-editor';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -30,6 +31,7 @@ import {
   blogEditorSeoScore,
   getBlogEditorSeoChecks,
 } from '@/lib/admin/blog/seo-checks';
+import { getCmsFaqEditorGuidance } from '@/lib/admin/cms-faq-guidance';
 import { cn } from '@/lib/utils';
 
 const calculators = getReadyCalculators();
@@ -64,6 +66,7 @@ function toInput(post?: CmsBlogPost): BlogPostInput {
     relatedResources: post?.relatedResources ?? [],
     relatedBlogPosts: post?.relatedBlogPosts ?? [],
     taxYear: post?.taxYear ?? null,
+    faqs: post?.faqs ?? [],
   };
 }
 
@@ -107,6 +110,7 @@ export function BlogEditor({
 
   const seoChecks = useMemo(() => getBlogEditorSeoChecks(form), [form]);
   const seoScore = useMemo(() => blogEditorSeoScore(form), [form]);
+  const faqGuidance = useMemo(() => getCmsFaqEditorGuidance(form.faqs), [form.faqs]);
 
   function updateField<K extends keyof BlogPostInput>(key: K, value: BlogPostInput[K]) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -215,6 +219,18 @@ export function BlogEditor({
                 />
               </div>
             </div>
+          </section>
+
+          <section className="rounded-lg border border-border bg-card p-4 shadow-tc-sm">
+            <h2 className="mb-1 text-sm font-semibold">FAQs (optional)</h2>
+            <p className="mb-4 text-xs text-muted-foreground">
+              Add educational Q&amp;A pairs for on-page accordions and FAQ rich results. Leave
+              empty to keep the current page layout.
+            </p>
+            <CmsFaqEditor
+              faqs={form.faqs}
+              onChange={(faqs) => updateField('faqs', faqs)}
+            />
           </section>
 
           <section className="rounded-lg border border-border bg-card p-4 shadow-tc-sm">
@@ -439,6 +455,25 @@ export function BlogEditor({
                 >
                   <span>{check.label}</span>
                   <span>{check.passed ? 'OK' : 'Missing'}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          <section className="rounded-lg border border-border bg-card p-4 shadow-tc-sm">
+            <h2 className="mb-3 text-sm font-semibold">FAQ guidance</h2>
+            <ul className="space-y-2">
+              {faqGuidance.map((check) => (
+                <li
+                  key={check.id}
+                  className={cn(
+                    'rounded-md border px-2.5 py-2 text-xs',
+                    check.passed
+                      ? 'border-tc-savings/30 bg-tc-savings-muted/40 text-tc-savings'
+                      : 'border-border bg-muted/30 text-muted-foreground',
+                  )}
+                >
+                  {check.label}
                 </li>
               ))}
             </ul>

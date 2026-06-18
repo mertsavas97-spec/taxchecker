@@ -31,5 +31,6 @@ export function normalizeBlogPost(
     relatedResources: post.relatedResources ?? [],
     relatedBlogPosts: post.relatedBlogPosts ?? [],
     revision: post.revision ?? 1,
+    faqs: post.faqs ?? [],
   };
 }

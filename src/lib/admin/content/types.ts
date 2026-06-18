@@ -5,6 +5,11 @@ export type CmsContentStatus = (typeof CMS_CONTENT_STATUSES)[number];
 export const CMS_CONTENT_TYPES = ['resource', 'blog'] as const;
 export type CmsContentType = (typeof CMS_CONTENT_TYPES)[number];
 
+export interface CmsFaqItem {
+  question: string;
+  answer: string;
+}
+
 export interface CmsContentBase {
   id: string;
   slug: string;
@@ -34,6 +39,7 @@ export interface CmsResource extends CmsContentBase {
   readingTime?: string;
   lastReviewed?: string | null;
   sourceIds?: string[];
+  faqs: CmsFaqItem[];
 }
 
 export interface ResourceInput {
@@ -58,6 +64,7 @@ export interface ResourceInput {
   relatedCalculatorSlugs: string[];
   relatedResourceSlugs: string[];
   relatedBlogSlugs: string[];
+  faqs: CmsFaqItem[];
 }
 
 export interface CmsBlogPost extends CmsContentBase {
@@ -76,6 +83,7 @@ export interface CmsBlogPost extends CmsContentBase {
   relatedBlogPosts: string[];
   /** Reserved for future revision history */
   revision: number;
+  faqs: CmsFaqItem[];
 }
 
 export type CmsContentItem = CmsResource | CmsBlogPost;
@@ -138,6 +146,7 @@ export interface BlogPostInput {
   relatedResources: string[];
   relatedBlogPosts: string[];
   taxYear?: number | null;
+  faqs: CmsFaqItem[];
 }
 
 export interface ContentRegistryOverrides {

@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { computeReadingTime } from '@/lib/blog/reading-time';
+import { sanitizeCmsFaqsForStorage } from '@/lib/cms/faq-utils';
 import { getContentStore } from '@/lib/admin/content/storage';
 import type {
   BlogPostInput,
@@ -46,6 +47,7 @@ function createBlogPostRecord(input: BlogPostInput): CmsBlogPost {
     relatedResources: input.relatedResources,
     relatedBlogPosts: input.relatedBlogPosts,
     revision: 1,
+    faqs: sanitizeCmsFaqsForStorage(input.faqs ?? []),
   };
 }
 
@@ -84,6 +86,7 @@ function createResourceRecord(input: ResourceInput): CmsResource {
     relatedCalculatorSlugs: input.relatedCalculatorSlugs,
     relatedResourceSlugs: input.relatedResourceSlugs,
     relatedBlogSlugs: input.relatedBlogSlugs,
+    faqs: sanitizeCmsFaqsForStorage(input.faqs ?? []),
   };
 }
 
@@ -185,6 +188,7 @@ class ContentRegistryStore {
       relatedCalculatorSlugs: input.relatedCalculatorSlugs,
       relatedResourceSlugs: input.relatedResourceSlugs,
       relatedBlogSlugs: input.relatedBlogSlugs,
+      faqs: sanitizeCmsFaqsForStorage(input.faqs ?? existing?.faqs ?? []),
       updatedAt: now,
       publishedAt:
         input.status === 'published'
@@ -221,6 +225,7 @@ class ContentRegistryStore {
       relatedCalculatorSlugs: [],
       relatedResourceSlugs: [],
       relatedBlogSlugs: [],
+      faqs: [],
     });
   }
 
@@ -267,6 +272,7 @@ class ContentRegistryStore {
       relatedCalculators: input.relatedCalculators,
       relatedResources: input.relatedResources,
       relatedBlogPosts: input.relatedBlogPosts,
+      faqs: sanitizeCmsFaqsForStorage(input.faqs ?? existing?.faqs ?? []),
       updatedAt: now,
       publishedAt:
         input.status === 'published'
@@ -300,6 +306,7 @@ class ContentRegistryStore {
       relatedCalculators: [],
       relatedResources: [],
       relatedBlogPosts: [],
+      faqs: [],
     });
   }
 

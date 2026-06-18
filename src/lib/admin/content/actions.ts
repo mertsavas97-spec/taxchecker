@@ -19,35 +19,35 @@ async function assertAdmin() {
 }
 
 function revalidateBlogPaths(slug?: string) {
-  revalidatePath('/admin/blog');
-  revalidatePath('/admin');
-  revalidatePath('/admin/seo');
-  revalidatePath('/admin/content');
-  revalidatePath('/blog');
-  revalidatePath('/sitemap.xml');
+  revalidatePath('/admin/blog', 'layout');
+  revalidatePath('/admin', 'layout');
+  revalidatePath('/admin/seo', 'layout');
+  revalidatePath('/admin/content', 'layout');
+  revalidatePath('/blog', 'page');
+  revalidatePath('/sitemap.xml', 'page');
   if (slug) {
-    revalidatePath(`/blog/${slug}`);
+    revalidatePath(`/blog/${slug}`, 'page');
   }
 }
 
 function revalidateResourcePaths(slug?: string, previousSlug?: string) {
-  revalidatePath('/admin/resources');
-  revalidatePath('/admin');
-  revalidatePath('/admin/seo');
-  revalidatePath('/admin/content');
-  revalidatePath('/resources');
-  revalidatePath('/sitemap.xml');
+  revalidatePath('/admin/resources', 'layout');
+  revalidatePath('/admin', 'layout');
+  revalidatePath('/admin/seo', 'layout');
+  revalidatePath('/admin/content', 'layout');
+  revalidatePath('/resources', 'page');
+  revalidatePath('/sitemap.xml', 'page');
   if (slug) {
     const route =
       slug === 'taxchecker-methodology' ? '/methodology' : `/resources/${slug}`;
-    revalidatePath(route);
+    revalidatePath(route, 'page');
   }
   if (previousSlug && previousSlug !== slug) {
     const previousRoute =
       previousSlug === 'taxchecker-methodology'
         ? '/methodology'
         : `/resources/${previousSlug}`;
-    revalidatePath(previousRoute);
+    revalidatePath(previousRoute, 'page');
   }
 }
 

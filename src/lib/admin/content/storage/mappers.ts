@@ -87,13 +87,31 @@ export function isUuid(value: string): boolean {
   );
 }
 
-function mapDbFaqs(value: unknown): CmsFaqItem[] {
-  if (!Array.isArray(value)) return [];
+function parseFaqsInput(value: unknown): unknown[] {
+  if (Array.isArray(value)) {
+    return value;
+  }
 
-  return value.flatMap((row) => {
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value) as unknown;
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+
+  return [];
+}
+
+export function mapDbFaqs(value: unknown): CmsFaqItem[] {
+  const rows = parseFaqsInput(value);
+
+  return rows.flatMap((row) => {
     if (typeof row !== 'object' || row === null || Array.isArray(row)) return [];
-    const question = typeof row.question === 'string' ? row.question : '';
-    const answer = typeof row.answer === 'string' ? row.answer : '';
+    const record = row as Record<string, unknown>;
+    const question = typeof record.question === 'string' ? record.question : '';
+    const answer = typeof record.answer === 'string' ? record.answer : '';
     return [{ question, answer }];
   });
 }

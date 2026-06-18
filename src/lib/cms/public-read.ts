@@ -1,5 +1,7 @@
 import 'server-only';
 
+import { unstable_noStore as noStore } from 'next/cache';
+
 import type { ResourceDefinition } from '@/config/resources';
 import {
   getPublishedResources as getStaticPublishedResources,
@@ -23,33 +25,76 @@ import {
   shouldUseRemotePublishedFallback,
 } from '@/lib/admin/content/supabase-seed-policy';
 import type { CmsBlogPost, CmsResource } from '@/lib/admin/content/types';
+import { createAdminClient, isSupabaseAdminConfigured } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 
 import {
   cmsResourceToPublicDefinition,
 } from '@/lib/resources/public-definition';
-async function fetchPublishedBlogPostsFromSupabase(): Promise<CmsBlogPost[] | null> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from('cms_blog_posts')
-    .select('*')
-    .eq('status', 'published')
-    .order('published_at', { ascending: false });
 
-  if (error) return null;
-  return ((data ?? []) as DbCmsBlogPost[]).map(mapDbBlogPostToCms);
+async function getPublishedCmsClient() {
+  if (isSupabaseAdminConfigured()) {
+    return createAdminClient();
+  }
+
+  return createClient();
+}
+
+async function fetchPublishedBlogPostsFromSupabase(): Promise<CmsBlogPost[] | null> {
+  noStore();
+
+  try {
+    const supabase = await getPublishedCmsClient();
+    const { data, error } = await supabase
+      .from('cms_blog_posts')
+      .select('*')
+      .eq('status', 'published')
+      .order('published_at', { ascending: false });
+
+    if (error) return null;
+    return ((data ?? []) as DbCmsBlogPost[]).map(mapDbBlogPostToCms);
+  } catch {
+    return null;
+  }
+}
+
+async function fetchPublishedBlogPostBySlugFromSupabase(
+  slug: string,
+): Promise<CmsBlogPost | undefined> {
+  noStore();
+
+  try {
+    const supabase = await getPublishedCmsClient();
+    const { data, error } = await supabase
+      .from('cms_blog_posts')
+      .select('*')
+      .eq('slug', slug)
+      .eq('status', 'published')
+      .maybeSingle();
+
+    if (error || !data) return undefined;
+    return mapDbBlogPostToCms(data as DbCmsBlogPost);
+  } catch {
+    return undefined;
+  }
 }
 
 async function fetchPublishedResourcesFromSupabase(): Promise<CmsResource[] | null> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from('cms_resources')
-    .select('*')
-    .eq('status', 'published')
-    .order('updated_at', { ascending: false });
+  noStore();
 
-  if (error) return null;
-  return ((data ?? []) as DbCmsResource[]).map(mapDbResourceToCms);
+  try {
+    const supabase = await getPublishedCmsClient();
+    const { data, error } = await supabase
+      .from('cms_resources')
+      .select('*')
+      .eq('status', 'published')
+      .order('updated_at', { ascending: false });
+
+    if (error) return null;
+    return ((data ?? []) as DbCmsResource[]).map(mapDbResourceToCms);
+  } catch {
+    return null;
+  }
 }
 
 export async function getPublishedBlogPostsPublic(): Promise<CmsBlogPost[]> {
@@ -77,6 +122,10 @@ export async function getPublishedBlogPostsPublic(): Promise<CmsBlogPost[]> {
     return publishedFromStore;
   }
 
+  if (isSupabaseStoreActive()) {
+    return [];
+  }
+
   return seedCmsBlogPosts()
     .filter((post) => post.status === 'published')
     .sort((a, b) => {
@@ -89,6 +138,13 @@ export async function getPublishedBlogPostsPublic(): Promise<CmsBlogPost[]> {
 export async function getPublishedBlogPostBySlugPublic(
   slug: string,
 ): Promise<CmsBlogPost | undefined> {
+  if (isSupabaseStoreActive()) {
+    const direct = await fetchPublishedBlogPostBySlugFromSupabase(slug);
+    if (direct) {
+      return direct;
+    }
+  }
+
   const posts = await getPublishedBlogPostsPublic();
   return posts.find((post) => post.slug === slug);
 }
@@ -115,6 +171,10 @@ export async function getPublishedResourceBySlugPublic(
   const published = cmsResources.filter((resource) => resource.status === 'published');
   const match = published.find((resource) => resource.slug === slug);
   if (match) return match;
+
+  if (isSupabaseStoreActive()) {
+    return undefined;
+  }
 
   const seeded = seedCmsResources()
     .filter((resource) => resource.status === 'published')
@@ -191,6 +251,10 @@ export async function getPublishedResourcesPublic(): Promise<ResourceDefinition[
       (resource) => !cmsSlugs.has(resource.slug),
     );
     return [...cmsPublished, ...staticPublished];
+  }
+
+  if (isSupabaseStoreActive()) {
+    return getStaticPublishedResources();
   }
 
   const seededPublished = seedCmsResources()

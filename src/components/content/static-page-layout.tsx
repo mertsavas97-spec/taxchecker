@@ -4,7 +4,7 @@ import { Breadcrumbs } from '@/components/navigation/breadcrumbs';
 import { JsonLd } from '@/components/seo/json-ld';
 import type { TrustPageDefinition } from '@/config/trust-pages';
 import type { StaticPageContent } from '@/lib/content/trust-page-content';
-import { buildStaticPageBreadcrumbs } from '@/lib/seo/schema';
+import { buildTrustPageJsonLd } from '@/lib/seo/schema';
 
 function StaticPageSectionBlock({
   section,
@@ -41,7 +41,7 @@ export function StaticPageLayout({
   content: StaticPageContent;
   children?: React.ReactNode;
 }) {
-  const jsonLd = buildStaticPageBreadcrumbs(page.shortTitle, page.route);
+  const jsonLd = buildTrustPageJsonLd(page);
 
   return (
     <SiteShell>

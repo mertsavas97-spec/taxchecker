@@ -14,7 +14,7 @@ import {
   sourceUpdatePolicy,
   type SourceCategory,
 } from '@/lib/authority/source-registry';
-import { buildStaticPageBreadcrumbs } from '@/lib/seo/schema';
+import { buildTrustPageJsonLd } from '@/lib/seo/schema';
 
 const categoryHeadings: Record<SourceCategory, string> = {
   publication: 'IRS publications',
@@ -80,7 +80,7 @@ function SourceTable({ category }: { category: SourceCategory }) {
 
 export function SourcesPage() {
   const page = getTrustPageBySlug('sources')!;
-  const jsonLd = buildStaticPageBreadcrumbs(page.shortTitle, page.route);
+  const jsonLd = buildTrustPageJsonLd(page);
   const totalSources = getPublicSourceRegistry().length;
 
   return (

@@ -13,7 +13,7 @@ import { getBlogPostPath, isTaxRelatedBlogPost } from '@/lib/blog/paths';
 import { getPublishedBlogPostsPublic } from '@/lib/cms/public-read';
 import { buildRelatedContentForBlogPost } from '@/lib/conversion/related-content';
 import {
-  buildArticleSchema,
+  buildBlogPostingSchema,
   buildBlogPostBreadcrumbs,
 } from '@/lib/seo/schema';
 import { cn } from '@/lib/utils';
@@ -76,7 +76,7 @@ export async function BlogArticleLayout({ post }: { post: CmsBlogPost }) {
 
   const jsonLd = [
     buildBlogPostBreadcrumbs(post.title, path),
-    buildArticleSchema({
+    buildBlogPostingSchema({
       title: post.seoTitle || post.title,
       description: post.seoDescription || post.excerpt,
       path,

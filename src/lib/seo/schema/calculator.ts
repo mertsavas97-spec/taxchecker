@@ -33,8 +33,6 @@ export function buildCalculatorSchema(calculator: CalculatorDefinition) {
       url: site.organization.url,
     },
     softwareHelp: absoluteUrl('/methodology'),
-    citation: absoluteUrl('/sources'),
-    disclaimer: site.disclaimer,
     keywords: [calculator.primaryKeyword, ...calculator.secondaryKeywords].join(
       ', ',
     ),

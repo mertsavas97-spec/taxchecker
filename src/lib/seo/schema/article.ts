@@ -11,12 +11,15 @@ export interface ArticleSchemaInput {
   imagePath?: string;
 }
 
-export function buildArticleSchema(article: ArticleSchemaInput) {
+function buildArticleLikeSchema(
+  type: 'Article' | 'BlogPosting',
+  article: ArticleSchemaInput,
+) {
   const url = absoluteUrl(article.path);
 
   return {
     '@context': 'https://schema.org',
-    '@type': 'Article',
+    '@type': type,
     headline: article.title,
     description: article.description,
     url,
@@ -49,4 +52,12 @@ export function buildArticleSchema(article: ArticleSchemaInput) {
     },
     inLanguage: site.defaultLocale.replace('_', '-'),
   };
+}
+
+export function buildArticleSchema(article: ArticleSchemaInput) {
+  return buildArticleLikeSchema('Article', article);
+}
+
+export function buildBlogPostingSchema(article: ArticleSchemaInput) {
+  return buildArticleLikeSchema('BlogPosting', article);
 }

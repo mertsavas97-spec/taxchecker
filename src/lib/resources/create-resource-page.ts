@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 
 import type { FaqItem } from '@/components/content/faq-block';
 import { ogPaths } from '@/lib/og/paths';
+import { getPublishedResourceBySlugPublic } from '@/lib/cms/public-read';
 import { getPublishedResourceOrThrow, getResourceOrThrow } from '@/lib/resources/related-links';
 import { buildResourceMetadata } from '@/lib/seo/metadata';
 import { buildArticleSchema, buildFaqSchema, buildResourceBreadcrumbs } from '@/lib/seo/schema';
@@ -11,11 +12,23 @@ export async function createResourcePageMetadata(slug: string): Promise<Metadata
   return buildResourceMetadata(resource);
 }
 
+function resolveResourceSchemaDates(
+  resource: Awaited<ReturnType<typeof getPublishedResourceOrThrow>>,
+  cmsResource: Awaited<ReturnType<typeof getPublishedResourceBySlugPublic>>,
+) {
+  const datePublished = cmsResource?.publishedAt ?? resource.lastReviewed;
+  const dateModified = resource.lastUpdated;
+
+  return { datePublished, dateModified };
+}
+
 export async function buildResourcePageJsonLd(
   slug: string,
   faqs: FaqItem[],
 ): Promise<Record<string, unknown>[]> {
   const resource = await getPublishedResourceOrThrow(slug);
+  const cmsResource = await getPublishedResourceBySlugPublic(slug);
+  const { datePublished, dateModified } = resolveResourceSchemaDates(resource, cmsResource);
 
   const schemas: Record<string, unknown>[] = [
     buildResourceBreadcrumbs(resource.shortTitle, resource.route),
@@ -23,8 +36,8 @@ export async function buildResourcePageJsonLd(
       title: resource.title,
       description: resource.description,
       path: resource.route,
-      publishedAt: resource.lastReviewed,
-      modifiedAt: resource.lastUpdated,
+      publishedAt: datePublished,
+      modifiedAt: dateModified,
       imagePath: ogPaths.resource(resource.slug),
     }),
   ];

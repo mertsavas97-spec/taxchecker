@@ -8,7 +8,7 @@ import { JsonLd } from '@/components/seo/json-ld';
 import { getTrustPageBySlug } from '@/config/trust-pages';
 import { site } from '@/config/site';
 import { getTrustPageContent } from '@/lib/content/trust-page-content';
-import { buildStaticPageBreadcrumbs } from '@/lib/seo/schema';
+import { buildTrustPageJsonLd } from '@/lib/seo/schema';
 
 const knownExclusions = [
   'Many tax credits and above-the-line adjustments',
@@ -21,7 +21,7 @@ const knownExclusions = [
 export function MethodologyPage() {
   const page = getTrustPageBySlug('methodology')!;
   const content = getTrustPageContent('methodology');
-  const jsonLd = buildStaticPageBreadcrumbs(page.shortTitle, page.route);
+  const jsonLd = buildTrustPageJsonLd(page);
 
   return (
     <SiteShell>

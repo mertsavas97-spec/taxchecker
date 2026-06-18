@@ -20,4 +20,9 @@ export {
 } from './breadcrumb';
 export { buildFaqSchema, type FaqItem } from './faq';
 export { buildCalculatorSchema } from './calculator';
-export { buildArticleSchema, type ArticleSchemaInput } from './article';
+export {
+  buildArticleSchema,
+  buildBlogPostingSchema,
+  type ArticleSchemaInput,
+} from './article';
+export { buildWebPageSchema, buildTrustPageJsonLd, type WebPageSchemaInput } from './web-page';

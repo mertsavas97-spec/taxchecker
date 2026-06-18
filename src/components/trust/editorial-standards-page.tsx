@@ -7,12 +7,12 @@ import { Breadcrumbs } from '@/components/navigation/breadcrumbs';
 import { JsonLd } from '@/components/seo/json-ld';
 import { getTrustPageBySlug } from '@/config/trust-pages';
 import { editorialStandardsContent } from '@/lib/authority/editorial-standards-content';
-import { buildStaticPageBreadcrumbs } from '@/lib/seo/schema';
+import { buildTrustPageJsonLd } from '@/lib/seo/schema';
 
 export function EditorialStandardsPage() {
   const page = getTrustPageBySlug('editorial-standards')!;
   const content = editorialStandardsContent;
-  const jsonLd = buildStaticPageBreadcrumbs(page.shortTitle, page.route);
+  const jsonLd = buildTrustPageJsonLd(page);
 
   return (
     <SiteShell>

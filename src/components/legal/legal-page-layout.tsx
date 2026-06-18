@@ -15,7 +15,7 @@ import {
   METHODOLOGY_LINK_LABEL,
 } from '@/config/related-content';
 import type { LegalPageContent, LegalRelatedLink } from '@/lib/legal/types';
-import { buildStaticPageBreadcrumbs } from '@/lib/seo/schema';
+import { buildTrustPageJsonLd } from '@/lib/seo/schema';
 
 const DEFAULT_RELATED_LINKS: LegalRelatedLink[] = [
   { label: 'Methodology', href: METHODOLOGY_LINK_HREF, description: METHODOLOGY_LINK_LABEL },
@@ -52,7 +52,7 @@ export function LegalPageLayout({
   content: LegalPageContent;
   relatedLinks?: LegalRelatedLink[];
 }) {
-  const jsonLd = buildStaticPageBreadcrumbs(page.shortTitle, page.route);
+  const jsonLd = buildTrustPageJsonLd(page);
   const sectionCount = content.sections.length;
 
   return (

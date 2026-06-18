@@ -33,7 +33,7 @@ import {
   getLatestCalculatorReviewDate,
   getPrimaryTaxYear,
 } from '@/lib/authority/review-dates';
-import { buildStaticPageBreadcrumbs } from '@/lib/seo/schema';
+import { buildTrustPageJsonLd } from '@/lib/seo/schema';
 
 const taxYear = getPrimaryTaxYear();
 const latestReview = getLatestCalculatorReviewDate();
@@ -78,7 +78,7 @@ const publishCards = [
 
 export function AboutPage() {
   const page = getTrustPageBySlug('about')!;
-  const jsonLd = buildStaticPageBreadcrumbs(page.shortTitle, page.route);
+  const jsonLd = buildTrustPageJsonLd(page);
 
   return (
     <SiteShell>

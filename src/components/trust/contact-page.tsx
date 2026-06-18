@@ -7,11 +7,11 @@ import { Breadcrumbs } from '@/components/navigation/breadcrumbs';
 import { ContactForm } from '@/components/trust/contact-form';
 import { JsonLd } from '@/components/seo/json-ld';
 import { getTrustPageBySlug } from '@/config/trust-pages';
-import { buildStaticPageBreadcrumbs } from '@/lib/seo/schema';
+import { buildTrustPageJsonLd } from '@/lib/seo/schema';
 
 export function ContactPage() {
   const page = getTrustPageBySlug('contact')!;
-  const jsonLd = buildStaticPageBreadcrumbs(page.shortTitle, page.route);
+  const jsonLd = buildTrustPageJsonLd(page);
 
   return (
     <SiteShell>

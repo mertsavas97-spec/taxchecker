@@ -70,10 +70,10 @@ export const resources: ResourceDefinition[] = [
   },
   {
     slug: 'self-employment-tax-guide',
-    title: 'Self Employment Tax Guide (2025) — Schedule SE Explained',
+    title: 'Self Employment Tax Guide',
     shortTitle: 'Self Employment Tax Guide',
     description:
-      'How 2025 self-employment tax works: Schedule SE net earnings, Social Security wage base & Medicare rates for freelancers. Planning guide—not tax advice.',
+      'How 2025 self-employment tax works: Schedule SE net earnings, Social Security wage base, and Medicare rates for freelancers. Planning guide—not tax advice.',
     category: 'guides',
     status: 'published',
     readingTime: '10 min read',
@@ -106,10 +106,10 @@ export const resources: ResourceDefinition[] = [
   },
   {
     slug: 'quarterly-tax-guide',
-    title: 'Quarterly Estimated Tax Guide (2025) — 1040-ES Basics',
+    title: 'Quarterly Estimated Tax Guide',
     shortTitle: 'Quarterly Tax Guide',
     description:
-      'Who pays quarterly federal estimated tax, safe harbor rules & how 1040-ES payments fit annual filing. 2025 planning guide from IRS publications—not tax advice.',
+      'Who pays quarterly federal estimated tax, safe harbor rules, and how Form 1040-ES payments fit annual filing. Planning guide from IRS publications—not tax advice.',
     category: 'guides',
     status: 'published',
     readingTime: '9 min read',
@@ -142,7 +142,7 @@ export const resources: ResourceDefinition[] = [
   },
   {
     slug: 'tax-brackets-2025',
-    title: '2025 Federal Tax Brackets — Rates by Filing Status',
+    title: '2025 Federal Tax Brackets',
     shortTitle: 'Tax Brackets 2025',
     description:
       '2025 federal income tax bracket table by filing status from IRS Revenue Procedure 2024-40. Reference rates used in TaxChecker calculators—not tax advice.',
@@ -176,10 +176,10 @@ export const resources: ResourceDefinition[] = [
   },
   {
     slug: 'quarterly-tax-due-dates-2025',
-    title: 'Quarterly Tax Due Dates 2025 — Form 1040-ES Payment Calendar',
+    title: '2025 Quarterly Tax Due Dates',
     shortTitle: 'Quarterly Due Dates 2025',
     description:
-      '2025 Form 1040-ES estimated tax due dates with weekend & holiday adjustments plus safe harbor overview. Federal deadline reference—not tax advice.',
+      '2025 Form 1040-ES estimated tax due dates with weekend and holiday adjustments plus safe harbor overview. Federal deadline reference—not tax advice.',
     category: 'deadlines',
     status: 'published',
     readingTime: '4 min read',

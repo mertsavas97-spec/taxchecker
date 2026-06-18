@@ -7,12 +7,11 @@ export const site = {
   siteName: 'TaxChecker',
   domain: 'taxchecker.app',
   productionUrl: 'https://taxchecker.app',
-  defaultTitle: 'Federal Tax Estimates You Can Verify — Free 2025 Calculators',
+  defaultTitle: 'TaxChecker — Free Federal Tax Calculators',
   defaultDescription:
-    'Free self-employment, 1099, quarterly & LLC vs S Corp calculators built from IRS publications. Run instant federal estimates—not tax advice.',
+    'Free federal tax calculators for self-employment, 1099 income, quarterly estimated taxes, LLC vs S Corp comparisons and HSA savings. Estimates only — not tax advice.',
   defaultOgImage: '/og/home',
   defaultLocale: 'en_US',
-  twitterHandle: '@taxchecker',
   titleTemplate: '%s | TaxChecker',
   organization: {
     name: 'TaxChecker',

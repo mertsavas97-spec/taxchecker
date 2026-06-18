@@ -22,7 +22,7 @@ import { site } from '@/config/site';
 import { cn } from '@/lib/utils';
 
 const heroTrustItems = [
-  '2025 federal rules from IRS publications',
+  'Federal rules from IRS publications',
   'Federal estimate only',
   'No signup required',
   'Runs locally in your browser',
@@ -47,7 +47,7 @@ export function HomeHero() {
       <PageContainer width="page">
         <div className="grid items-center gap-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-8">
           <div className="space-y-4">
-            <p className="tc-overline">2025 federal estimates</p>
+            <p className="tc-overline">Federal tax estimates</p>
             <h1 className="tc-heading-page text-foreground">
               Federal tax estimates you can verify.
             </h1>
@@ -150,7 +150,7 @@ export function HomeLatestResources() {
             <h2 className="tc-heading-section">Latest resources</h2>
             <p className="text-sm text-muted-foreground">
               Guides and reference articles from IRS publications for self-employment,
-              quarterly payments, and 2025 federal tax rules.
+              quarterly payments, and federal tax planning.
             </p>
           </div>
           <Button variant="outline" size="sm" asChild>

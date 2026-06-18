@@ -39,10 +39,10 @@ export const calculators: CalculatorDefinition[] = [
   {
     slug: 'self-employed-tax-calculator',
     engineId: 'self-employed-tax',
-    title: 'Self Employed Tax Calculator (2025) — Free SE & Income Tax Estimate',
+    title: 'Self Employment Tax Calculator 2025',
     shortTitle: 'Self-Employed Tax',
     description:
-      'Estimate 2025 self-employment tax & federal income tax on net profit using Schedule SE rules & IRS brackets. Free instant calculator—not tax advice.',
+      'Estimate 2025 self-employment and federal income tax on net profit using Schedule SE rules and IRS brackets. Free calculator—not tax advice.',
     category: 'self-employed',
     primaryKeyword: 'self employed tax calculator',
     secondaryKeywords: [
@@ -67,10 +67,10 @@ export const calculators: CalculatorDefinition[] = [
   {
     slug: '1099-tax-calculator',
     engineId: '1099-tax',
-    title: '1099 Tax Calculator (2025) — Free Contractor Income Tax Estimate',
+    title: '1099 Tax Calculator 2025',
     shortTitle: '1099 Tax',
     description:
-      'Estimate federal tax on 1099-NEC income after business expenses—incl. self-employment & income tax. Free calculator for contractors—not tax advice.',
+      'Estimate federal tax on 1099-NEC income after business expenses, including self-employment and income tax. Free contractor calculator—not tax advice.',
     category: 'self-employed',
     primaryKeyword: '1099 tax calculator',
     secondaryKeywords: [
@@ -95,10 +95,10 @@ export const calculators: CalculatorDefinition[] = [
   {
     slug: 'quarterly-tax-calculator',
     engineId: 'quarterly-tax',
-    title: 'Quarterly Tax Calculator (2025) — Free 1040-ES Payment Estimate',
+    title: 'Quarterly Estimated Tax Calculator 2025',
     shortTitle: 'Quarterly Tax',
     description:
-      'Estimate 2025 quarterly federal tax payments using IRS safe harbor rules & Form 1040-ES due dates. Free self-employed planner—not tax advice.',
+      'Estimate 2025 quarterly federal tax payments with IRS safe harbor rules and Form 1040-ES due dates. Free self-employed planner—not tax advice.',
     category: 'self-employed',
     primaryKeyword: 'quarterly tax calculator',
     secondaryKeywords: [
@@ -123,10 +123,10 @@ export const calculators: CalculatorDefinition[] = [
   {
     slug: 'estimated-tax-calculator',
     engineId: 'estimated-tax',
-    title: 'Estimated Tax Calculator (2025) — Annual Federal Liability Worksheet',
+    title: 'Estimated Tax Calculator 2025',
     shortTitle: 'Estimated Tax',
     description:
-      'Estimate annual federal tax, remaining liability & safe harbor targets for self-employed income. Free 2025 worksheet from IRS publications—not tax advice.',
+      'Estimate annual federal tax, remaining liability, and safe harbor targets for self-employed and mixed income. Free 2025 worksheet—not tax advice.',
     category: 'self-employed',
     primaryKeyword: 'estimated tax calculator',
     secondaryKeywords: [
@@ -151,10 +151,10 @@ export const calculators: CalculatorDefinition[] = [
   {
     slug: 'w2-vs-1099-calculator',
     engineId: 'w2-vs-1099',
-    title: 'W2 vs 1099 Calculator (2025) — Compare Take-Home Pay & Taxes',
+    title: 'W-2 vs 1099 Calculator 2025',
     shortTitle: 'W-2 vs 1099',
     description:
-      'Compare estimated federal taxes & take-home pay: W-2 employee vs 1099 contractor side by side. Free 2025 comparison—not employment or legal advice.',
+      'Compare estimated federal taxes and take-home pay for W-2 employees versus 1099 contractors side by side. Free comparison—not employment or legal advice.',
     category: 'employment',
     primaryKeyword: 'W2 vs 1099 calculator',
     secondaryKeywords: [
@@ -179,10 +179,10 @@ export const calculators: CalculatorDefinition[] = [
   {
     slug: 's-corp-tax-calculator',
     engineId: 's-corp-tax',
-    title: 'S Corp Tax Calculator (2025) — Salary, Payroll & Distribution Estimate',
+    title: 'S Corp Tax Calculator 2025',
     shortTitle: 'S Corp Tax',
     description:
-      'Estimate federal taxes on S corp owner salary, employer FICA & pass-through distributions. User-entered salary—free 2025 planner, not compensation advice.',
+      'Estimate federal taxes on S corp owner salary, employer FICA, and pass-through distributions. User-entered salary—free planner, not compensation advice.',
     category: 'business-entity',
     primaryKeyword: 'S corp tax calculator',
     secondaryKeywords: [
@@ -207,10 +207,10 @@ export const calculators: CalculatorDefinition[] = [
   {
     slug: 'llc-vs-scorp-calculator',
     engineId: 'llc-vs-scorp',
-    title: 'LLC vs S Corp Calculator (2025) — Free Federal Tax Comparison',
+    title: 'LLC vs S Corp Tax Calculator 2025',
     shortTitle: 'LLC vs S Corp',
     description:
-      'Compare estimated federal taxes: LLC sole proprietor vs S corporation with owner salary. Free 2025 side-by-side model—not entity or legal advice.',
+      'Compare estimated federal taxes for an LLC sole proprietor versus an S corporation with owner salary. Free side-by-side model—not entity or legal advice.',
     category: 'business-entity',
     primaryKeyword: 'LLC vs S corp calculator',
     secondaryKeywords: [
@@ -235,10 +235,10 @@ export const calculators: CalculatorDefinition[] = [
   {
     slug: 'hsa-tax-savings-calculator',
     engineId: 'hsa-tax',
-    title: 'HSA Tax Savings Calculator (2025) — Free HSA Deduction Estimate',
+    title: 'HSA Tax Savings Calculator 2025',
     shortTitle: 'HSA Tax Savings',
     description:
-      'Estimate 2025 federal income & payroll tax savings from HSA contributions using IRS-published limits. Free calculator—HDHP eligibility not assessed here.',
+      'Estimate federal income and payroll tax savings from HSA contributions using IRS-published 2025 limits. HDHP eligibility is not assessed here—not tax advice.',
     category: 'benefits',
     primaryKeyword: 'HSA tax savings calculator',
     secondaryKeywords: [

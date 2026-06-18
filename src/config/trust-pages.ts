@@ -31,17 +31,17 @@ export const trustPages: TrustPageDefinition[] = [
   {
     slug: 'about',
     route: '/about',
-    title: 'About TaxChecker — Federal Tax Tools from IRS Publications',
+    title: 'About TaxChecker',
     shortTitle: 'About',
     description:
-      'How TaxChecker builds free federal tax calculators for freelancers & contractors—documented from IRS publications. Independent—not affiliated with the IRS.',
+      'Learn how TaxChecker builds free federal tax calculators for freelancers and contractors using documented IRS publications. Independent—not affiliated with the IRS.',
     lastUpdated: UPDATED,
     sitemapPriority: 0.6,
   },
   {
     slug: 'contact',
     route: '/contact',
-    title: 'Contact TaxChecker',
+    title: 'Contact',
     shortTitle: 'Contact',
     description:
       'Contact TaxChecker about federal tax calculators, methodology, or website questions. Estimates only — not tax advice. No public email address is published.',
@@ -51,7 +51,7 @@ export const trustPages: TrustPageDefinition[] = [
   {
     slug: 'privacy',
     route: '/privacy',
-    title: 'Privacy Policy — TaxChecker',
+    title: 'Privacy Policy',
     shortTitle: 'Privacy Policy',
     description:
       'TaxChecker privacy policy: how we handle data when you use our free federal tax calculators. Calculations run locally in your browser.',
@@ -61,7 +61,7 @@ export const trustPages: TrustPageDefinition[] = [
   {
     slug: 'terms',
     route: '/terms',
-    title: 'Terms of Use — TaxChecker',
+    title: 'Terms of Use',
     shortTitle: 'Terms of Use',
     description:
       'Terms of use for TaxChecker federal tax calculators. Estimates only — not tax, legal, or financial advice.',
@@ -71,7 +71,7 @@ export const trustPages: TrustPageDefinition[] = [
   {
     slug: 'disclaimer',
     route: '/disclaimer',
-    title: 'Disclaimer — TaxChecker',
+    title: 'Disclaimer',
     shortTitle: 'Disclaimer',
     description:
       'TaxChecker disclaimer: federal tax estimates for planning only. Not tax advice, not affiliated with the IRS.',
@@ -81,37 +81,37 @@ export const trustPages: TrustPageDefinition[] = [
   {
     slug: 'methodology',
     route: '/methodology',
-    title: 'Tax Calculator Methodology — Federal Estimates from IRS Publications',
+    title: 'Methodology',
     shortTitle: 'Methodology',
     description:
-      'How TaxChecker models federal estimates: IRS publications, annual reviews, known exclusions & estimate-only limits. Source traceability—not IRS endorsement.',
+      'How TaxChecker models federal estimates: IRS sources, annual reviews, known exclusions, and estimate-only limits. Source traceability—not IRS endorsement.',
     lastUpdated: UPDATED,
     sitemapPriority: 0.7,
   },
   {
     slug: 'sources',
     route: '/sources',
-    title: 'IRS Publications & Forms Used by TaxChecker — Source List',
+    title: 'Sources',
     shortTitle: 'Sources',
     description:
-      'Browse IRS publications, forms, revenue procedures & notices cited in TaxChecker calculators and guides. Public source appendix for the labeled tax year.',
+      'IRS publications, forms, revenue procedures, and notices cited in TaxChecker calculators and guides. Public source appendix for the labeled tax year.',
     lastUpdated: UPDATED,
     sitemapPriority: 0.65,
   },
   {
     slug: 'editorial-standards',
     route: '/editorial-standards',
-    title: 'Editorial Standards — How TaxChecker Reviews Tax Content',
+    title: 'Editorial Standards',
     shortTitle: 'Editorial Standards',
     description:
-      'How TaxChecker creates, reviews & corrects calculators and guides: tax-year checks, source citations, update workflow & reader corrections. Not IRS certification.',
+      'How TaxChecker creates, reviews, and corrects calculators and guides: tax-year checks, source citations, update workflow, and reader corrections.',
     lastUpdated: UPDATED,
     sitemapPriority: 0.6,
   },
   {
     slug: 'guides',
     route: '/guides',
-    title: 'Tax Guides — TaxChecker',
+    title: 'Tax Guides',
     shortTitle: 'Guides',
     description:
       'Federal tax guides and reference articles from TaxChecker. Educational content for self-employment, quarterly payments, and more.',

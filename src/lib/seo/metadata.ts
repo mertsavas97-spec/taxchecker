@@ -14,6 +14,15 @@ export interface MetadataOptions {
   ogImage?: string;
   noindex?: boolean;
   keywords?: string[];
+  /** When true, title is already fully branded (e.g. homepage) */
+  absoluteTitle?: boolean;
+}
+
+function socialTitle(title: string, absoluteTitle?: boolean): string {
+  if (absoluteTitle || title.includes(`| ${site.siteName}`)) {
+    return title;
+  }
+  return `${title} | ${site.siteName}`;
 }
 
 export interface ArticleMetadataInput {
@@ -56,25 +65,29 @@ function buildOpenGraph({
   description,
   path = '/',
   ogImage,
+  absoluteTitle,
 }: {
   title: string;
   description: string;
   path?: string;
   ogImage?: string;
+  absoluteTitle?: boolean;
 }): Metadata['openGraph'] {
+  const resolvedTitle = socialTitle(title, absoluteTitle);
+
   return {
     type: 'website',
     locale: site.defaultLocale,
     url: canonicalUrl(path),
     siteName: site.siteName,
-    title,
+    title: resolvedTitle,
     description,
     images: [
       {
         url: ogImageUrl(ogImage),
         width: 1200,
         height: 630,
-        alt: `${title} — TaxChecker`,
+        alt: `${resolvedTitle} — TaxChecker`,
         type: 'image/png',
       },
     ],
@@ -85,21 +98,23 @@ function buildTwitterCard({
   title,
   description,
   ogImage,
+  absoluteTitle,
 }: {
   title: string;
   description: string;
   ogImage?: string;
+  absoluteTitle?: boolean;
 }): Metadata['twitter'] {
+  const resolvedTitle = socialTitle(title, absoluteTitle);
+
   return {
     card: 'summary_large_image',
-    site: site.twitterHandle,
-    creator: site.twitterHandle,
-    title,
+    title: resolvedTitle,
     description,
     images: [
       {
         url: ogImageUrl(ogImage),
-        alt: `${title} — TaxChecker`,
+        alt: `${resolvedTitle} — TaxChecker`,
       },
     ],
   };
@@ -124,11 +139,13 @@ function assembleMetadata(
       description,
       path,
       ogImage: options.ogImage,
+      absoluteTitle: options.absoluteTitle,
     }),
     twitter: buildTwitterCard({
       title,
       description,
       ogImage: options.ogImage,
+      absoluteTitle: options.absoluteTitle,
     }),
     robots: buildRobots(options.noindex),
     ...(options.keywords?.length
@@ -141,14 +158,28 @@ function assembleMetadata(
 export function buildSiteIcons(): Metadata['icons'] {
   return {
     icon: [
-      { url: '/favicon.ico' },
+      { url: '/favicon.ico', sizes: 'any' },
       { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
       { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon-48x48.png', sizes: '48x48', type: 'image/png' },
     ],
     apple: [
       { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
     ],
+    shortcut: '/favicon.ico',
     other: [
+      {
+        rel: 'icon',
+        url: '/android-chrome-192x192.png',
+        sizes: '192x192',
+        type: 'image/png',
+      },
+      {
+        rel: 'icon',
+        url: '/android-chrome-512x512.png',
+        sizes: '512x512',
+        type: 'image/png',
+      },
       {
         rel: 'icon',
         url: '/icon-192.png',
@@ -246,10 +277,16 @@ function blogUrlPath(slug: string): string {
 
 /** Homepage metadata */
 export function buildHomeMetadata(): Metadata {
-  return assembleMetadata(site.defaultTitle, site.defaultDescription, {
-    path: '/',
-    ogImage: ogPaths.home,
-  });
+  return {
+    ...assembleMetadata(site.defaultTitle, site.defaultDescription, {
+      path: '/',
+      ogImage: ogPaths.home,
+      absoluteTitle: true,
+    }),
+    title: {
+      absolute: site.defaultTitle,
+    },
+  };
 }
 
 export function buildStaticPageMetadata(
@@ -265,8 +302,8 @@ export function buildStaticPageMetadata(
 
 export function buildCalculatorsHubMetadata(): Metadata {
   return assembleMetadata(
-    '8 Free Federal Tax Calculators (2025) — Self-Employed & 1099',
-    'Compare self-employment, 1099, quarterly, estimated tax, HSA, S Corp & W-2 vs 1099 calculators. Free federal estimates from IRS publications—not tax advice.',
+    'Free Federal Tax Calculators',
+    'Browse self-employment, 1099, quarterly estimated tax, LLC vs S Corp, HSA, and W-2 vs 1099 calculators. Federal estimates from IRS publications—not tax advice.',
     {
       path: '/calculators',
       ogImage: ogPaths.hubCalculators,
@@ -282,8 +319,8 @@ export function buildCalculatorsHubMetadata(): Metadata {
 
 export function buildResourcesHubMetadata(): Metadata {
   return assembleMetadata(
-    'Federal Tax Guides & 2025 Reference Tables — TaxChecker',
-    'Self-employment tax, quarterly payments, 2025 federal brackets & 1040-ES due dates from IRS publications. Planning reference—not tax advice.',
+    'Federal Tax Guides & Reference',
+    'Self-employment tax guides, quarterly payment basics, federal tax brackets, and Form 1040-ES due dates from IRS publications—not tax advice.',
     {
       path: '/resources',
       ogImage: ogPaths.hubResources,
@@ -299,8 +336,8 @@ export function buildResourcesHubMetadata(): Metadata {
 
 export function buildBlogHubMetadata(): Metadata {
   return assembleMetadata(
-    'Federal Tax Planning Blog — Self-Employed & 1099 Guides',
-    'Plain-language federal tax articles on self-employment, 1099 contractors, quarterly payments, LLC vs S Corp & 2025 brackets—from IRS publications. Not tax advice.',
+    'Federal Tax Planning Blog',
+    'Plain-language articles on self-employment tax, 1099 contractors, quarterly payments, LLC vs S Corp, and federal brackets—from IRS publications. Not tax advice.',
     {
       path: '/blog',
       ogImage: ogPaths.hubBlog,

@@ -30,12 +30,17 @@ const TRUST_SLUGS: TrustPageSlug[] = [
 
 function metadataRecord(metadata: Metadata): { title: string; description: string } {
   const rawTitle = metadata.title;
-  const title =
-    typeof rawTitle === 'string'
-      ? rawTitle
-      : rawTitle && typeof rawTitle === 'object' && 'default' in rawTitle
-        ? (rawTitle.default ?? site.defaultTitle)
-        : site.defaultTitle;
+  let title: string = site.defaultTitle;
+
+  if (typeof rawTitle === 'string') {
+    title = rawTitle;
+  } else if (rawTitle && typeof rawTitle === 'object') {
+    if ('absolute' in rawTitle && typeof rawTitle.absolute === 'string') {
+      title = rawTitle.absolute;
+    } else if ('default' in rawTitle && typeof rawTitle.default === 'string') {
+      title = rawTitle.default;
+    }
+  }
 
   return {
     title,

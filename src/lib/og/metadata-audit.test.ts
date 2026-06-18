@@ -53,9 +53,10 @@ describe('metadata OG integration', () => {
     });
     expect(metadata.twitter).toMatchObject({
       card: 'summary_large_image',
-      site: site.twitterHandle,
-      creator: site.twitterHandle,
+      title: site.defaultTitle,
     });
+    expect(metadata.twitter?.site).toBeUndefined();
+    expect(metadata.twitter?.creator).toBeUndefined();
   });
 
   it('sets calculator-specific OG images', () => {

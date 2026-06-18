@@ -2,6 +2,7 @@ import Link from 'next/link';
 
 import { AdminPageHeader } from '@/components/admin/admin-page-header';
 import { AdminStatusBadge } from '@/components/admin/admin-status-badge';
+import { SeedSyncPanel } from '@/components/admin/seed-sync-panel';
 import { Button } from '@/components/ui/button';
 import {
   Table,
@@ -12,6 +13,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { contentRegistry } from '@/lib/admin/content/registry';
+import { getConfiguredStoreDriver, getStoreDriverLabel } from '@/lib/admin/content/storage';
 
 export default async function AdminContentPage() {
   const resources = await contentRegistry.getResources();
@@ -52,6 +54,8 @@ export default async function AdminContentPage() {
           </>
         }
       />
+
+      <SeedSyncPanel storeLabel={getStoreDriverLabel(getConfiguredStoreDriver())} />
 
       <div className="overflow-hidden rounded-lg border border-border bg-card shadow-tc-sm">
         <Table>

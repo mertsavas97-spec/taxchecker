@@ -9,12 +9,19 @@ import {
 import { getAllHubResources } from '@/config/resource-hub';
 import { contentRegistry } from '@/lib/admin/content/registry';
 import {
+  seedCmsBlogPosts,
+  seedCmsResources,
+} from '@/lib/admin/content/seed';
+import {
   mapDbBlogPostToCms,
   mapDbResourceToCms,
   type DbCmsBlogPost,
   type DbCmsResource,
 } from '@/lib/admin/content/storage/mappers';
 import { isSupabaseStoreActive } from '@/lib/admin/content/storage';
+import {
+  shouldUseRemotePublishedFallback,
+} from '@/lib/admin/content/supabase-seed-policy';
 import type { CmsBlogPost, CmsResource } from '@/lib/admin/content/types';
 import { createClient } from '@/lib/supabase/server';
 
@@ -91,14 +98,28 @@ export async function getPublishedBlogPostsPublic(): Promise<CmsBlogPost[]> {
   if (isSupabaseStoreActive()) {
     try {
       const remote = await fetchPublishedBlogPostsFromSupabase();
-      if (remote) return remote;
+      if (shouldUseRemotePublishedFallback(remote)) {
+        return remote;
+      }
     } catch {
       // Fall through to registry/static fallback.
     }
   }
 
   const posts = await contentRegistry.getBlogPosts();
-  return posts
+  const publishedFromStore = posts
+    .filter((post) => post.status === 'published')
+    .sort((a, b) => {
+      const aDate = a.publishedAt ?? a.updatedAt;
+      const bDate = b.publishedAt ?? b.updatedAt;
+      return bDate.localeCompare(aDate);
+    });
+
+  if (publishedFromStore.length > 0) {
+    return publishedFromStore;
+  }
+
+  return seedCmsBlogPosts()
     .filter((post) => post.status === 'published')
     .sort((a, b) => {
       const aDate = a.publishedAt ?? a.updatedAt;
@@ -140,7 +161,7 @@ export async function getPublishedResourcesPublic(): Promise<ResourceDefinition[
   if (isSupabaseStoreActive()) {
     try {
       const remote = await fetchPublishedResourcesFromSupabase();
-      if (remote && remote.length > 0) {
+      if (shouldUseRemotePublishedFallback(remote)) {
         return remote.map(cmsResourceToDefinition);
       }
     } catch {
@@ -159,6 +180,14 @@ export async function getPublishedResourcesPublic(): Promise<ResourceDefinition[
       (resource) => !cmsSlugs.has(resource.slug),
     );
     return [...cmsPublished, ...staticPublished];
+  }
+
+  const seededPublished = seedCmsResources()
+    .filter((resource) => resource.status === 'published')
+    .map(cmsResourceToDefinition);
+
+  if (seededPublished.length > 0) {
+    return seededPublished;
   }
 
   return getStaticPublishedResources();

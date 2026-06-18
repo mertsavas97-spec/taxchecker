@@ -4,6 +4,11 @@ import { revalidatePath } from 'next/cache';
 
 import { requireAdminSession } from '@/lib/admin/auth/server';
 import { contentRegistry } from '@/lib/admin/content/registry';
+import { isSupabaseStoreActive } from '@/lib/admin/content/storage';
+import {
+  syncSupabaseCmsSeed,
+  type SeedSyncResult,
+} from '@/lib/admin/content/supabase-seed';
 import type { BlogPostInput, CmsContentStatus } from '@/lib/admin/content/types';
 
 async function assertAdmin() {
@@ -14,35 +19,66 @@ function revalidateBlogPaths(slug?: string) {
   revalidatePath('/admin/blog');
   revalidatePath('/admin');
   revalidatePath('/admin/seo');
+  revalidatePath('/admin/content');
   revalidatePath('/blog');
+  revalidatePath('/sitemap.xml');
   if (slug) {
     revalidatePath(`/blog/${slug}`);
   }
 }
 
-function revalidateResourcePaths() {
+function revalidateResourcePaths(slug?: string) {
   revalidatePath('/admin/resources');
   revalidatePath('/admin');
   revalidatePath('/admin/seo');
+  revalidatePath('/admin/content');
   revalidatePath('/resources');
+  revalidatePath('/sitemap.xml');
+  if (slug) {
+    const route =
+      slug === 'methodology' ? '/methodology' : `/resources/${slug}`;
+    revalidatePath(route);
+  }
+}
+
+export async function syncSeedContentAction(force = false): Promise<SeedSyncResult> {
+  await assertAdmin();
+
+  if (!isSupabaseStoreActive()) {
+    throw new Error('Seed sync is only available when Supabase CMS storage is active.');
+  }
+
+  const result = await syncSupabaseCmsSeed({ force });
+
+  revalidatePath('/admin');
+  revalidatePath('/admin/content');
+  revalidatePath('/admin/calculators');
+  revalidatePath('/admin/resources');
+  revalidatePath('/admin/blog');
+  revalidatePath('/admin/seo');
+  revalidatePath('/blog');
+  revalidatePath('/resources');
+  revalidatePath('/sitemap.xml');
+
+  return result;
 }
 
 export async function publishResourceAction(id: string) {
   await assertAdmin();
-  await contentRegistry.updateResourceStatus(id, 'published');
-  revalidateResourcePaths();
+  const resource = await contentRegistry.updateResourceStatus(id, 'published');
+  revalidateResourcePaths(resource?.slug);
 }
 
 export async function archiveResourceAction(id: string) {
   await assertAdmin();
-  await contentRegistry.updateResourceStatus(id, 'archived');
-  revalidateResourcePaths();
+  const resource = await contentRegistry.updateResourceStatus(id, 'archived');
+  revalidateResourcePaths(resource?.slug);
 }
 
 export async function draftResourceAction(id: string) {
   await assertAdmin();
-  await contentRegistry.updateResourceStatus(id, 'draft');
-  revalidateResourcePaths();
+  const resource = await contentRegistry.updateResourceStatus(id, 'draft');
+  revalidateResourcePaths(resource?.slug);
 }
 
 export async function publishBlogPostAction(id: string) {

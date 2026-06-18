@@ -1,8 +1,9 @@
-import { AdminDataTable } from '@/components/admin/admin-data-table';
 import { AdminPageHeader } from '@/components/admin/admin-page-header';
 import { AdminStatCard } from '@/components/admin/admin-stat-card';
-import { Badge } from '@/components/ui/badge';
+import { SeoIssuesTable } from '@/components/admin/seo-issues-table';
+import { SeedSyncPanel } from '@/components/admin/seed-sync-panel';
 import { contentRegistry } from '@/lib/admin/content/registry';
+import { getConfiguredStoreDriver, getStoreDriverLabel } from '@/lib/admin/content/storage';
 import type { CmsSeoIssue } from '@/lib/admin/content/types';
 
 function countIssues(
@@ -17,41 +18,6 @@ function countIssues(
   >,
 ): number {
   return issues.filter((issue) => issue[key]).length;
-}
-
-function IssueFlags({ issue }: { issue: CmsSeoIssue }) {
-  const flags = [
-    issue.missingSeoTitle && 'SEO title',
-    issue.missingSeoDescription && 'SEO description',
-    issue.missingLastReviewed && 'Last reviewed',
-    issue.missingRelatedContent && 'Related content',
-    issue.missingTaxonomy && 'Taxonomy',
-  ].filter(Boolean) as string[];
-
-  if (flags.length === 0) {
-    return (
-      <Badge
-        variant="outline"
-        className="border-tc-savings/30 bg-tc-savings-muted/50 text-tc-savings text-[10px]"
-      >
-        Complete
-      </Badge>
-    );
-  }
-
-  return (
-    <div className="flex flex-wrap gap-1">
-      {flags.map((flag) => (
-        <Badge
-          key={flag}
-          variant="outline"
-          className="border-tc-liability/20 bg-tc-liability-muted/40 text-tc-liability text-[10px]"
-        >
-          {flag}
-        </Badge>
-      ))}
-    </div>
-  );
 }
 
 export default async function AdminSeoPage() {
@@ -71,6 +37,8 @@ export default async function AdminSeoPage() {
         title="SEO Audit"
         description="Internal audit dashboard for missing metadata across content types. No external integrations."
       />
+
+      <SeedSyncPanel storeLabel={getStoreDriverLabel(getConfiguredStoreDriver())} />
 
       <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <AdminStatCard
@@ -95,37 +63,7 @@ export default async function AdminSeoPage() {
         />
       </div>
 
-      <AdminDataTable
-        rows={withIssues}
-        emptyTitle="No SEO issues found"
-        emptyDescription="All tracked content has complete metadata."
-        columns={[
-          {
-            key: 'title',
-            header: 'Content',
-            render: (row) => (
-              <div>
-                <p className="font-medium">{row.title}</p>
-                <p className="text-xs text-muted-foreground">{row.slug}</p>
-              </div>
-            ),
-          },
-          {
-            key: 'type',
-            header: 'Type',
-            render: (row) => (
-              <span className="capitalize text-muted-foreground">
-                {row.contentType}
-              </span>
-            ),
-          },
-          {
-            key: 'issues',
-            header: 'Issues',
-            render: (row) => <IssueFlags issue={row} />,
-          },
-        ]}
-      />
+      <SeoIssuesTable issues={withIssues} />
     </div>
   );
 }

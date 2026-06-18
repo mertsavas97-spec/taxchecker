@@ -194,7 +194,6 @@ export function mapCmsBlogPostToDb(post: CmsBlogPost): Partial<DbCmsBlogPost> {
     featured: post.featured,
     related_calculators: post.relatedCalculators,
     related_resources: post.relatedResources,
-    related_blog_posts: post.relatedBlogPosts,
     tax_year: post.taxYear,
     revision: post.revision,
   };

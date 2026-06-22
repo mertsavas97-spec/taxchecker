@@ -9,7 +9,7 @@ import { Breadcrumbs } from '@/components/navigation/breadcrumbs';
 import { JsonLd } from '@/components/seo/json-ld';
 import { site } from '@/config/site';
 import type { CmsBlogPost } from '@/lib/admin/content/types';
-import { BlogContentParagraph } from '@/lib/blog/content';
+import { MarkdownContent } from '@/components/content/markdown-content';
 import { buildBlogArticleJsonLd, getPublishedBlogFaqs } from '@/lib/blog/blog-faq-public';
 import { getBlogPostPath, isTaxRelatedBlogPost } from '@/lib/blog/paths';
 import { getPublishedBlogPostsPublic } from '@/lib/cms/public-read';
@@ -63,10 +63,6 @@ function BlogMetadataBar({
 
 export async function BlogArticleLayout({ post }: { post: CmsBlogPost }) {
   const path = getBlogPostPath(post.slug);
-  const paragraphs = post.content
-    .split(/\n{2,}/)
-    .map((paragraph) => paragraph.trim())
-    .filter(Boolean);
   const publishedPosts = await getPublishedBlogPostsPublic();
   const related = buildRelatedContentForBlogPost(post, publishedPosts);
 
@@ -98,11 +94,7 @@ export async function BlogArticleLayout({ post }: { post: CmsBlogPost }) {
         <PageContainer width="page">
           <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(16rem,20rem)]">
             <article className="min-w-0 space-y-6">
-              <div className="tc-prose">
-                {paragraphs.map((paragraph) => (
-                  <BlogContentParagraph key={paragraph.slice(0, 48)} text={paragraph} />
-                ))}
-              </div>
+              <MarkdownContent content={post.content} className="tc-prose" />
 
               <RelatedContentBlock
                 title="Related content"

@@ -1,11 +1,7 @@
 import { ResourceArticleLayout } from '@/components/resources/resource-article-layout';
-import {
-  ResourceParagraph,
-  ResourceProse,
-  ResourceSection,
-} from '@/components/resources/resource-section';
+import { ResourceSection } from '@/components/resources/resource-section';
 import { ResourceSources } from '@/components/resources/resource-sources';
-import { BlogContentParagraph, renderBlogContentParagraphs } from '@/lib/blog/content';
+import { MarkdownContent } from '@/components/content/markdown-content';
 import type { CmsResource } from '@/lib/admin/content/types';
 import { getPublishedResourceBySlugPublic } from '@/lib/cms/public-read';
 import { hasCmsResourceBody } from '@/lib/resources/public-definition';
@@ -20,21 +16,13 @@ export async function getPublishedCmsResourceForSlug(
 }
 
 export function CmsResourceArticleBody({ content }: { content: string }) {
-  const paragraphs = renderBlogContentParagraphs(content);
-
-  if (paragraphs.length === 0) {
+  if (!content.trim()) {
     return null;
   }
 
   return (
     <ResourceSection title="Overview">
-      <ResourceProse>
-        {paragraphs.map((paragraph, index) => (
-          <ResourceParagraph key={index}>
-            <BlogContentParagraph text={paragraph} />
-          </ResourceParagraph>
-        ))}
-      </ResourceProse>
+      <MarkdownContent content={content} />
     </ResourceSection>
   );
 }
@@ -59,11 +47,7 @@ export async function CmsResourceArticlePage({
         <CmsResourceArticleBody content={resource.content ?? ''} />
       ) : (
         <ResourceSection title="Overview">
-          <ResourceProse>
-            <ResourceParagraph>
-              {resource.description || resource.seoDescription}
-            </ResourceParagraph>
-          </ResourceProse>
+          <p>{resource.description || resource.seoDescription}</p>
         </ResourceSection>
       )}
     </ResourceArticleLayout>

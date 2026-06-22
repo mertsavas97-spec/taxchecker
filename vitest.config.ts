@@ -11,6 +11,7 @@ export default defineConfig({
       'src/lib/admin/content/**/*.test.ts',
       'src/lib/admin/resources/**/*.test.ts',
       'src/lib/cms/**/*.test.ts',
+      'src/lib/cms/**/*.test.tsx',
     ],
   },
   resolve: {

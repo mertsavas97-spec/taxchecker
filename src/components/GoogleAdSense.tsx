@@ -1,14 +1,15 @@
 import Script from 'next/script';
 
 const ADSENSE_CLIENT = 'ca-pub-4750251278461517';
+const ADSENSE_SCRIPT_SRC = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT}`;
 
 export function GoogleAdSense() {
   return (
     <Script
       async
-      src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT}`}
+      src={ADSENSE_SCRIPT_SRC}
       crossOrigin="anonymous"
-      strategy="afterInteractive"
+      strategy="beforeInteractive"
     />
   );
 }

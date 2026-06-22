@@ -5,11 +5,14 @@ const ADSENSE_SCRIPT_SRC = `https://pagead2.googlesyndication.com/pagead/js/adsb
 
 export function GoogleAdSense() {
   return (
-    <Script
-      async
-      src={ADSENSE_SCRIPT_SRC}
-      crossOrigin="anonymous"
-      strategy="beforeInteractive"
-    />
+    <>
+      <meta name="google-adsense-account" content={ADSENSE_CLIENT} />
+      <Script
+        async
+        src={ADSENSE_SCRIPT_SRC}
+        crossOrigin="anonymous"
+        strategy="beforeInteractive"
+      />
+    </>
   );
 }

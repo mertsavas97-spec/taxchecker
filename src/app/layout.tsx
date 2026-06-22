@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ClarityProvider } from "@/components/clarity-provider";
+import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import { buildDefaultMetadata } from "@/lib/seo/metadata";
 import "./globals.css";
 
@@ -27,6 +28,7 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        <GoogleAnalytics />
         <ClarityProvider />
         {children}
       </body>

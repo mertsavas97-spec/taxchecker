@@ -3,6 +3,15 @@ import { NextResponse, type NextRequest } from 'next/server';
 
 import { ADMIN_SESSION_COOKIE } from '@/lib/admin/auth/constants';
 import { verifyAdminSessionToken } from '@/lib/admin/auth/session-token';
+import {
+  buildCanonicalRedirectUrl,
+  CANONICAL_REDIRECT_STATUS,
+  getRequestHostname,
+  NON_CANONICAL_ROBOTS_HEADER,
+  nonCanonicalRedirectHeaders,
+  resolveHostPolicy,
+  shouldNoIndexHost,
+} from '@/lib/seo/host-canonicalization';
 import { isSupabaseConfigured } from '@/lib/supabase/client';
 import { updateSupabaseSession } from '@/lib/supabase/middleware';
 
@@ -46,7 +55,7 @@ async function isSupabaseAdminAuthenticated(request: NextRequest): Promise<boole
   return Boolean(data);
 }
 
-export async function middleware(request: NextRequest) {
+async function handleApplicationRequest(request: NextRequest): Promise<NextResponse> {
   const { pathname } = request.nextUrl;
 
   if (!pathname.startsWith('/admin') && !pathname.startsWith('/api/admin')) {
@@ -87,6 +96,29 @@ export async function middleware(request: NextRequest) {
   return NextResponse.next();
 }
 
+export async function middleware(request: NextRequest) {
+  const hostname = getRequestHostname(request);
+  const hostPolicy = resolveHostPolicy(hostname);
+
+  if (hostPolicy.action === 'redirect') {
+    const redirectUrl = buildCanonicalRedirectUrl(request.url);
+    return new NextResponse(null, {
+      status: CANONICAL_REDIRECT_STATUS,
+      headers: nonCanonicalRedirectHeaders(redirectUrl),
+    });
+  }
+
+  const response = await handleApplicationRequest(request);
+
+  if (shouldNoIndexHost(hostname)) {
+    response.headers.set('X-Robots-Tag', NON_CANONICAL_ROBOTS_HEADER);
+  }
+
+  return response;
+}
+
 export const config = {
-  matcher: ['/admin/:path*', '/api/admin/:path*', '/api/auth/callback'],
+  matcher: [
+    '/((?!_next/static|_next/image|favicon\\.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|txt|xml|webmanifest)$).*)',
+  ],
 };

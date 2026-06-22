@@ -7,7 +7,7 @@ import {
   getPublishedBlogPosts,
 } from '@/lib/blog/public';
 import { buildArticleMetadata } from '@/lib/seo/metadata';
-import { ogPaths } from '@/lib/og/paths';
+import { resolveBlogImagePath } from '@/lib/blog/thumbnails';
 
 interface BlogPostPageProps {
   params: Promise<{ slug: string }>;
@@ -38,7 +38,7 @@ export async function generateMetadata({
     publishedAt: post.publishedAt ?? post.updatedAt,
     modifiedAt: post.updatedAt,
     authorName: post.authorName ?? undefined,
-    ogImage: post.ogImage ?? ogPaths.blog(post.slug),
+    ogImage: resolveBlogImagePath(post),
     keywords: post.tags,
   });
 }

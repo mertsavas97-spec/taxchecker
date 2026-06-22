@@ -77,6 +77,11 @@ export function BlogFeaturedCard({ post }: { post: CmsBlogPost }) {
           <p className="tc-overline text-tc-brand">Featured</p>
           <h2 className="tc-heading-subsection text-foreground">{post.title}</h2>
           <p className="text-base leading-relaxed text-muted-foreground">{post.excerpt}</p>
+          <p className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+            <ClockIcon className="size-3 shrink-0" aria-hidden />
+            {post.readingTime}
+            {post.publishedAt ? ` · ${post.publishedAt}` : null}
+          </p>
         </div>
         <Link
           href={getBlogPostPath(post.slug)}

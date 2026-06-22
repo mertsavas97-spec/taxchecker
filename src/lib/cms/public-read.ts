@@ -20,12 +20,11 @@ import {
   type DbCmsBlogPost,
   type DbCmsResource,
 } from '@/lib/admin/content/storage/mappers';
-import { isSupabaseStoreActive } from '@/lib/admin/content/storage';
-import {
-  shouldUseRemotePublishedFallback,
-} from '@/lib/admin/content/supabase-seed-policy';
+import { getConfiguredStoreDriver, isSupabaseStoreActive } from '@/lib/admin/content/storage';
+import type { BlogPostsPublicSource } from '@/lib/blog/hub-listing';
 import type { CmsBlogPost, CmsResource } from '@/lib/admin/content/types';
 import { createAdminClient, isSupabaseAdminConfigured } from '@/lib/supabase/admin';
+import { isSupabasePublicReadConfigured } from '@/lib/supabase/public-read';
 import { createClient } from '@/lib/supabase/server';
 
 import {
@@ -40,6 +39,26 @@ async function getPublishedCmsClient() {
   return createClient();
 }
 
+function sortPublishedBlogPosts(posts: CmsBlogPost[]): CmsBlogPost[] {
+  return [...posts].sort((a, b) => {
+    const aDate = a.publishedAt ?? a.updatedAt;
+    const bDate = b.publishedAt ?? b.updatedAt;
+    return bDate.localeCompare(aDate);
+  });
+}
+
+function isDisplayablePublishedBlogPost(post: CmsBlogPost): boolean {
+  return (
+    post.status === 'published' &&
+    Boolean(post.slug?.trim()) &&
+    Boolean(post.title?.trim())
+  );
+}
+
+function normalizePublishedBlogPosts(posts: CmsBlogPost[]): CmsBlogPost[] {
+  return sortPublishedBlogPosts(posts.filter(isDisplayablePublishedBlogPost));
+}
+
 async function fetchPublishedBlogPostsFromSupabase(): Promise<CmsBlogPost[] | null> {
   noStore();
 
@@ -49,11 +68,24 @@ async function fetchPublishedBlogPostsFromSupabase(): Promise<CmsBlogPost[] | nu
       .from('cms_blog_posts')
       .select('*')
       .eq('status', 'published')
+      .not('slug', 'is', null)
+      .not('title', 'is', null)
       .order('published_at', { ascending: false });
 
-    if (error) return null;
-    return ((data ?? []) as DbCmsBlogPost[]).map(mapDbBlogPostToCms);
-  } catch {
+    if (error) {
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[blog-hub] Supabase published blog fetch failed:', error.message);
+      }
+      return null;
+    }
+
+    return normalizePublishedBlogPosts(
+      ((data ?? []) as DbCmsBlogPost[]).map(mapDbBlogPostToCms),
+    );
+  } catch (error) {
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('[blog-hub] Supabase published blog fetch threw:', error);
+    }
     return null;
   }
 }
@@ -73,7 +105,8 @@ async function fetchPublishedBlogPostBySlugFromSupabase(
       .maybeSingle();
 
     if (error || !data) return undefined;
-    return mapDbBlogPostToCms(data as DbCmsBlogPost);
+    const post = mapDbBlogPostToCms(data as DbCmsBlogPost);
+    return isDisplayablePublishedBlogPost(post) ? post : undefined;
   } catch {
     return undefined;
   }
@@ -97,48 +130,45 @@ async function fetchPublishedResourcesFromSupabase(): Promise<CmsResource[] | nu
   }
 }
 
-export async function getPublishedBlogPostsPublic(): Promise<CmsBlogPost[]> {
-  if (isSupabaseStoreActive()) {
-    try {
-      const remote = await fetchPublishedBlogPostsFromSupabase();
-      if (shouldUseRemotePublishedFallback(remote)) {
-        return remote;
-      }
-    } catch {
-      // Fall through to registry/static fallback.
+export interface ResolvedPublishedBlogPosts {
+  posts: CmsBlogPost[];
+  source: BlogPostsPublicSource;
+}
+
+export async function resolvePublishedBlogPosts(): Promise<ResolvedPublishedBlogPosts> {
+  if (isSupabasePublicReadConfigured()) {
+    const remote = await fetchPublishedBlogPostsFromSupabase();
+    if (remote !== null) {
+      return { posts: remote, source: 'supabase' };
     }
   }
 
   const posts = await contentRegistry.getBlogPosts();
-  const publishedFromStore = posts
-    .filter((post) => post.status === 'published')
-    .sort((a, b) => {
-      const aDate = a.publishedAt ?? a.updatedAt;
-      const bDate = b.publishedAt ?? b.updatedAt;
-      return bDate.localeCompare(aDate);
-    });
+  const publishedFromStore = normalizePublishedBlogPosts(posts);
 
   if (publishedFromStore.length > 0) {
-    return publishedFromStore;
+    return { posts: publishedFromStore, source: 'registry' };
   }
 
-  if (isSupabaseStoreActive()) {
-    return [];
+  if (isSupabasePublicReadConfigured()) {
+    return { posts: [], source: 'supabase' };
   }
 
-  return seedCmsBlogPosts()
-    .filter((post) => post.status === 'published')
-    .sort((a, b) => {
-      const aDate = a.publishedAt ?? a.updatedAt;
-      const bDate = b.publishedAt ?? b.updatedAt;
-      return bDate.localeCompare(aDate);
-    });
+  return {
+    posts: normalizePublishedBlogPosts(seedCmsBlogPosts()),
+    source: 'seed',
+  };
+}
+
+export async function getPublishedBlogPostsPublic(): Promise<CmsBlogPost[]> {
+  const resolved = await resolvePublishedBlogPosts();
+  return resolved.posts;
 }
 
 export async function getPublishedBlogPostBySlugPublic(
   slug: string,
 ): Promise<CmsBlogPost | undefined> {
-  if (isSupabaseStoreActive()) {
+  if (isSupabasePublicReadConfigured()) {
     const direct = await fetchPublishedBlogPostBySlugFromSupabase(slug);
     if (direct) {
       return direct;
@@ -156,10 +186,19 @@ function cmsResourceToDefinition(resource: CmsResource): ResourceDefinition {
 export async function getPublishedResourceBySlugPublic(
   slug: string,
 ): Promise<CmsResource | undefined> {
-  if (isSupabaseStoreActive()) {
+  if (isSupabasePublicReadConfigured()) {
     try {
       const remote = await fetchPublishedResourcesFromSupabase();
-      if (shouldUseRemotePublishedFallback(remote)) {
+      if (remote !== null) {
+        return remote.find((resource) => resource.slug === slug);
+      }
+    } catch {
+      // Fall through to registry/static fallback.
+    }
+  } else if (isSupabaseStoreActive()) {
+    try {
+      const remote = await fetchPublishedResourcesFromSupabase();
+      if (remote !== null) {
         return remote.find((resource) => resource.slug === slug);
       }
     } catch {
@@ -172,7 +211,7 @@ export async function getPublishedResourceBySlugPublic(
   const match = published.find((resource) => resource.slug === slug);
   if (match) return match;
 
-  if (isSupabaseStoreActive()) {
+  if (isSupabasePublicReadConfigured() || isSupabaseStoreActive()) {
     return undefined;
   }
 
@@ -229,10 +268,19 @@ export async function getHubResourcesPublic(): Promise<ResourceDefinition[]> {
 }
 
 export async function getPublishedResourcesPublic(): Promise<ResourceDefinition[]> {
-  if (isSupabaseStoreActive()) {
+  if (isSupabasePublicReadConfigured()) {
     try {
       const remote = await fetchPublishedResourcesFromSupabase();
-      if (shouldUseRemotePublishedFallback(remote)) {
+      if (remote !== null) {
+        return remote.map(cmsResourceToDefinition);
+      }
+    } catch {
+      // Fall through to static fallback.
+    }
+  } else if (isSupabaseStoreActive()) {
+    try {
+      const remote = await fetchPublishedResourcesFromSupabase();
+      if (remote !== null) {
         return remote.map(cmsResourceToDefinition);
       }
     } catch {
@@ -253,7 +301,7 @@ export async function getPublishedResourcesPublic(): Promise<ResourceDefinition[
     return [...cmsPublished, ...staticPublished];
   }
 
-  if (isSupabaseStoreActive()) {
+  if (isSupabasePublicReadConfigured() || isSupabaseStoreActive()) {
     return getStaticPublishedResources();
   }
 
@@ -275,4 +323,8 @@ export async function getSitemapResourcesPublic(): Promise<ResourceDefinition[]>
 
 export function getStaticResourceCatalog(): ResourceDefinition[] {
   return staticResources;
+}
+
+export function getBlogHubStoreDriverLabel(): string {
+  return getConfiguredStoreDriver();
 }

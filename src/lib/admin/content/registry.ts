@@ -115,7 +115,15 @@ class ContentRegistryStore {
 
   async getBlogPostById(id: string): Promise<CmsBlogPost | undefined> {
     const posts = await this.getBlogPosts();
-    return posts.find((post) => post.id === id);
+    const byId = posts.find((post) => post.id === id);
+    if (byId) return byId;
+
+    if (id.startsWith('blog-')) {
+      const slug = id.slice('blog-'.length);
+      return posts.find((post) => post.slug === slug);
+    }
+
+    return undefined;
   }
 
   async getBlogPostBySlug(slug: string): Promise<CmsBlogPost | undefined> {
@@ -284,7 +292,8 @@ class ContentRegistryStore {
     };
 
     await this.store.saveBlogPost(post);
-    return post;
+    const persisted = await this.getBlogPostBySlug(post.slug);
+    return persisted ?? post;
   }
 
   async createBlogPost(input: {

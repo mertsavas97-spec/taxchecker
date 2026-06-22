@@ -4,6 +4,7 @@ import { mapDbBlogPostToCms } from '@/lib/admin/content/storage/mappers';
 import { seedCmsBlogPosts } from '@/lib/admin/content/seed';
 
 const mockIsSupabaseStoreActive = vi.fn();
+const mockIsSupabasePublicReadConfigured = vi.fn();
 const mockIsSupabaseAdminConfigured = vi.fn();
 const mockCreateClient = vi.fn();
 const mockCreateAdminClient = vi.fn();
@@ -15,6 +16,11 @@ vi.mock('next/cache', () => ({
 
 vi.mock('@/lib/admin/content/storage', () => ({
   isSupabaseStoreActive: () => mockIsSupabaseStoreActive(),
+  getConfiguredStoreDriver: () => 'file',
+}));
+
+vi.mock('@/lib/supabase/public-read', () => ({
+  isSupabasePublicReadConfigured: () => mockIsSupabasePublicReadConfigured(),
 }));
 
 vi.mock('@/lib/supabase/admin', () => ({
@@ -42,6 +48,12 @@ function createSupabaseBlogClient(result: { data: unknown; error: unknown }) {
             maybeSingle: async () =>
               Array.isArray(result.data) ? { data: null, error: null } : result,
           }),
+          not: () => ({
+            not: () => ({
+              order: async () =>
+                Array.isArray(result.data) ? result : { data: [], error: null },
+            }),
+          }),
           order: async () =>
             Array.isArray(result.data) ? result : { data: [], error: null },
         }),
@@ -50,39 +62,84 @@ function createSupabaseBlogClient(result: { data: unknown; error: unknown }) {
   };
 }
 
-describe('getPublishedBlogPostsPublic fallback', () => {
+function createRemoteBlogRows(count: number) {
+  return Array.from({ length: count }, (_, index) => ({
+    id: `11111111-1111-1111-1111-${String(index + 1).padStart(12, '0')}`,
+    slug: `remote-post-${index + 1}`,
+    title: `Remote post ${index + 1}`,
+    excerpt: 'Excerpt',
+    content: 'Body',
+    status: 'published',
+    category: 'Guides',
+    tags: [],
+    author_id: null,
+    author_name: 'TaxChecker',
+    published_at: `2026-01-${String(index + 1).padStart(2, '0')}`,
+    updated_at: '2026-01-01T00:00:00.000Z',
+    seo_title: `Remote post ${index + 1}`,
+    seo_description: `Remote post ${index + 1}`,
+    canonical_url: null,
+    og_image: null,
+    tax_year: 2026,
+    reading_time: '5 min read',
+    featured: index === 0,
+    related_calculators: [],
+    related_resources: [],
+    related_blog_posts: [],
+    revision: 1,
+    faqs: [],
+  }));
+}
+
+describe('resolvePublishedBlogPosts', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockIsSupabaseStoreActive.mockReturnValue(true);
+    mockIsSupabaseStoreActive.mockReturnValue(false);
+    mockIsSupabasePublicReadConfigured.mockReturnValue(true);
     mockIsSupabaseAdminConfigured.mockReturnValue(true);
     mockGetBlogPosts.mockResolvedValue([]);
   });
 
-  it('falls back to launch seed posts when Supabase returns an empty list and store is inactive', async () => {
-    mockIsSupabaseStoreActive.mockReturnValue(false);
+  it('uses Supabase when public read is configured even if admin store driver is file', async () => {
     mockCreateAdminClient.mockReturnValue(
-      createSupabaseBlogClient({ data: [], error: null }),
+      createSupabaseBlogClient({
+        data: createRemoteBlogRows(12),
+        error: null,
+      }),
     );
 
-    const { getPublishedBlogPostsPublic } = await import('./public-read');
-    const posts = await getPublishedBlogPostsPublic();
+    const { resolvePublishedBlogPosts } = await import('./public-read');
+    const resolved = await resolvePublishedBlogPosts();
+
+    expect(resolved.source).toBe('supabase');
+    expect(resolved.posts).toHaveLength(12);
+    expect(mockGetBlogPosts).not.toHaveBeenCalled();
+  });
+
+  it('falls back to launch seed posts when Supabase is not configured', async () => {
+    mockIsSupabasePublicReadConfigured.mockReturnValue(false);
+
+    const { resolvePublishedBlogPosts } = await import('./public-read');
+    const resolved = await resolvePublishedBlogPosts();
     const seeded = seedCmsBlogPosts().filter((post) => post.status === 'published');
 
-    expect(posts.length).toBe(seeded.length);
-    expect(posts.map((post) => post.slug).sort()).toEqual(
+    expect(resolved.source).toBe('seed');
+    expect(resolved.posts.length).toBe(seeded.length);
+    expect(resolved.posts.map((post) => post.slug).sort()).toEqual(
       seeded.map((post) => post.slug).sort(),
     );
   });
 
-  it('does not fall back to launch seed posts when Supabase CMS is active but empty', async () => {
+  it('does not fall back to launch seed posts when Supabase is configured but empty', async () => {
     mockCreateAdminClient.mockReturnValue(
       createSupabaseBlogClient({ data: [], error: null }),
     );
 
-    const { getPublishedBlogPostsPublic } = await import('./public-read');
-    const posts = await getPublishedBlogPostsPublic();
+    const { resolvePublishedBlogPosts } = await import('./public-read');
+    const resolved = await resolvePublishedBlogPosts();
 
-    expect(posts).toEqual([]);
+    expect(resolved.source).toBe('supabase');
+    expect(resolved.posts).toEqual([]);
   });
 
   it('prefers non-empty Supabase results over static fallback', async () => {
@@ -111,6 +168,7 @@ describe('getPublishedBlogPostsPublic fallback', () => {
             featured: false,
             related_calculators: [],
             related_resources: [],
+            related_blog_posts: [],
             revision: 1,
             faqs: [],
           },
@@ -119,11 +177,11 @@ describe('getPublishedBlogPostsPublic fallback', () => {
       }),
     );
 
-    const { getPublishedBlogPostsPublic } = await import('./public-read');
-    const posts = await getPublishedBlogPostsPublic();
+    const { resolvePublishedBlogPosts } = await import('./public-read');
+    const resolved = await resolvePublishedBlogPosts();
 
-    expect(posts).toHaveLength(1);
-    expect(posts[0]?.slug).toBe('remote-only-post');
+    expect(resolved.posts).toHaveLength(1);
+    expect(resolved.posts[0]?.slug).toBe('remote-only-post');
   });
 
   it('preserves published FAQs from Supabase rows in public blog reads', async () => {

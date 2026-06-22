@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 
 import { CalculatorTopicIcon } from '@/components/calculator/calculator-topic-icon';
+import { BlogThumbnail } from '@/components/blog/blog-thumbnail';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { kindLabel } from '@/lib/conversion/build-links';
 import type { RelatedContentLink } from '@/lib/conversion/types';
@@ -19,6 +20,17 @@ function LinkIcon({
   link: RelatedContentLink;
   className?: string;
 }) {
+  if (link.kind === 'article' && link.imageUrl) {
+    return (
+      <BlogThumbnail
+        src={link.imageUrl}
+        alt={link.imageAlt ?? link.title}
+        variant="related"
+        className={className}
+      />
+    );
+  }
+
   if (link.kind === 'calculator') {
     return (
       <CalculatorTopicIcon href={link.href} size="sm" className={className} />

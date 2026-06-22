@@ -9,7 +9,7 @@ import {
   syncSupabaseCmsSeed,
   type SeedSyncResult,
 } from '@/lib/admin/content/supabase-seed';
-import type { BlogPostInput, ResourceInput } from '@/lib/admin/content/types';
+import type { BlogPostInput, CmsBlogPost, ResourceInput } from '@/lib/admin/content/types';
 
 async function assertAdmin() {
   const authenticated = await isAdminAuthenticated();
@@ -27,6 +27,18 @@ function revalidateBlogPaths(slug?: string) {
   revalidatePath('/sitemap.xml', 'page');
   if (slug) {
     revalidatePath(`/blog/${slug}`, 'page');
+  }
+}
+
+export type SaveBlogPostResult = {
+  post: CmsBlogPost;
+  revalidationWarning?: string;
+};
+
+function runBlogRevalidation(slug: string, adminPostId?: string) {
+  revalidateBlogPaths(slug);
+  if (adminPostId) {
+    revalidatePath(`/admin/blog/${adminPostId}`);
   }
 }
 
@@ -120,14 +132,21 @@ export async function createBlogPostAction(input: {
   return post;
 }
 
-export async function saveBlogPostAction(input: BlogPostInput) {
+export async function saveBlogPostAction(
+  input: BlogPostInput,
+): Promise<SaveBlogPostResult> {
   await assertAdmin();
   const post = await contentRegistry.upsertBlogPost(input);
-  revalidateBlogPaths(post.slug);
-  if (input.id) {
-    revalidatePath(`/admin/blog/${input.id}`);
+
+  let revalidationWarning: string | undefined;
+  try {
+    runBlogRevalidation(post.slug, post.id);
+  } catch (error) {
+    revalidationWarning =
+      error instanceof Error ? error.message : 'Cache revalidation failed.';
   }
-  return post;
+
+  return { post, revalidationWarning };
 }
 
 export async function createResourceAction(input: {

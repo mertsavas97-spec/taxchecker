@@ -2,12 +2,18 @@ import 'server-only';
 
 import type { CmsBlogPost } from '@/lib/admin/content/types';
 import {
+  getBlogHubStoreDriverLabel,
   getFeaturedPublishedBlogPostPublic,
   getPublishedBlogPostBySlugPublic,
   getPublishedBlogPostsPublic,
+  resolvePublishedBlogPosts,
 } from '@/lib/cms/public-read';
 
 export { getBlogPostPath } from '@/lib/blog/paths';
+export {
+  getBlogHubStoreDriverLabel,
+  resolvePublishedBlogPosts,
+} from '@/lib/cms/public-read';
 
 export async function getAllBlogPosts(): Promise<CmsBlogPost[]> {
   const { contentRegistry } = await import('@/lib/admin/content/registry');

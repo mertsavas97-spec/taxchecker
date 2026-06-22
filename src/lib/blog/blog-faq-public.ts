@@ -1,6 +1,7 @@
 import type { CmsBlogPost } from '@/lib/admin/content/types';
 import { normalizePublishedFaqs } from '@/lib/cms/faq-utils';
 import { site } from '@/config/site';
+import { resolveBlogImagePath } from '@/lib/blog/thumbnails';
 import { buildBlogPostingSchema, buildBlogPostBreadcrumbs, buildFaqSchema } from '@/lib/seo/schema';
 
 export function getPublishedBlogFaqs(post: Pick<CmsBlogPost, 'faqs'>) {
@@ -17,7 +18,7 @@ export function buildBlogArticleJsonLd(post: CmsBlogPost, path: string) {
       publishedAt: post.publishedAt ?? post.updatedAt,
       modifiedAt: post.updatedAt,
       authorName: post.authorName ?? site.organization.name,
-      imagePath: post.ogImage ?? undefined,
+      imagePath: resolveBlogImagePath(post),
     }),
   ];
 

@@ -1,5 +1,6 @@
 import type { CmsBlogPost } from '@/lib/admin/content/types';
 import { computeReadingTime } from '@/lib/blog/reading-time';
+import { getBlogThumbnailPathForSlug } from '@/lib/blog/thumbnails';
 
 export interface LaunchBlogPostInput {
   id: string;
@@ -40,7 +41,7 @@ export function launchBlogPostToCms(input: LaunchBlogPostInput): CmsBlogPost {
     authorId: null,
     authorName: AUTHOR,
     canonicalUrl: null,
-    ogImage: null,
+    ogImage: getBlogThumbnailPathForSlug(input.slug),
     readingTime: computeReadingTime(input.content),
     featured: input.featured ?? false,
     relatedCalculators: input.relatedCalculators,

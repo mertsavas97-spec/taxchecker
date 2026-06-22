@@ -1,13 +1,20 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { SearchIcon } from 'lucide-react';
 
 import { BlogCard, BlogFeaturedCard } from '@/components/blog/blog-card';
 import { BlogEmptyState, BlogFilterEmptyState } from '@/components/blog/blog-empty-state';
+import { BlogPagination } from '@/components/blog/blog-pagination';
 import { Input } from '@/components/ui/input';
 import { blogCategories, getBlogCategoryDefinition } from '@/config/blog-categories';
 import type { CmsBlogPost } from '@/lib/admin/content/types';
+import {
+  BLOG_HUB_PAGE_SIZE,
+  getBlogHubPageCount,
+  paginateBlogHubPosts,
+} from '@/lib/blog/pagination';
+import { shouldShowFeaturedBlogCard } from '@/lib/blog/hub-listing';
 import { cn } from '@/lib/utils';
 
 function matchesQuery(post: CmsBlogPost, query: string): boolean {
@@ -24,13 +31,17 @@ function matchesQuery(post: CmsBlogPost, query: string): boolean {
 export function BlogHubFilter({
   posts,
   featuredPost,
+  currentPage,
 }: {
   posts: CmsBlogPost[];
   featuredPost?: CmsBlogPost;
+  currentPage: number;
 }) {
   const [query, setQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<string>('all');
+  const [filteredPage, setFilteredPage] = useState(1);
   const hasPublishedPosts = posts.length > 0 || Boolean(featuredPost);
+  const hasActiveFilters = activeCategory !== 'all' || query.trim().length > 0;
 
   const filteredPosts = useMemo(() => {
     return posts.filter((post) => {
@@ -39,6 +50,25 @@ export function BlogHubFilter({
       return matchesCategory && matchesQuery(post, query);
     });
   }, [posts, query, activeCategory]);
+
+  useEffect(() => {
+    setFilteredPage(1);
+  }, [query, activeCategory]);
+
+  const totalFilteredPosts = filteredPosts.length;
+  const totalPages = getBlogHubPageCount(totalFilteredPosts, BLOG_HUB_PAGE_SIZE);
+  const activePage = hasActiveFilters ? filteredPage : currentPage;
+  const safePage = Math.min(Math.max(activePage, 1), totalPages);
+  const visiblePosts = paginateBlogHubPosts(
+    filteredPosts,
+    safePage,
+    BLOG_HUB_PAGE_SIZE,
+  );
+  const showFeaturedCard = shouldShowFeaturedBlogCard({
+    hasFeaturedPost: Boolean(featuredPost),
+    currentPage: safePage,
+    hasActiveFilters,
+  });
 
   const activeCategoryMeta =
     activeCategory === 'all' ? null : getBlogCategoryDefinition(activeCategory);
@@ -49,7 +79,9 @@ export function BlogHubFilter({
 
   return (
     <div className="space-y-4">
-      {featuredPost ? <BlogFeaturedCard post={featuredPost} /> : null}
+      {showFeaturedCard && featuredPost ? (
+        <BlogFeaturedCard post={featuredPost} />
+      ) : null}
 
       {activeCategoryMeta ? (
         <p className="text-sm leading-relaxed text-muted-foreground">
@@ -118,12 +150,22 @@ export function BlogHubFilter({
         </div>
       </div>
 
-      {filteredPosts.length > 0 ? (
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {filteredPosts.map((post) => (
-            <BlogCard key={post.id} post={post} />
-          ))}
-        </div>
+      {totalFilteredPosts > 0 ? (
+        <>
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {visiblePosts.map((post) => (
+              <BlogCard key={post.id} post={post} />
+            ))}
+          </div>
+
+          <BlogPagination
+            currentPage={safePage}
+            totalPages={totalPages}
+            totalPosts={totalFilteredPosts}
+            basePath="/blog"
+            onPageChange={hasActiveFilters ? setFilteredPage : undefined}
+          />
+        </>
       ) : (
         <BlogFilterEmptyState />
       )}

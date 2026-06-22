@@ -31,19 +31,12 @@ import {
   blogEditorSeoScore,
   getBlogEditorSeoChecks,
 } from '@/lib/admin/blog/seo-checks';
+import { isValidBlogSlug, normalizeBlogSlug } from '@/lib/admin/blog/slug';
 import { getCmsFaqEditorGuidance } from '@/lib/admin/cms-faq-guidance';
 import { cn } from '@/lib/utils';
 
 const calculators = getReadyCalculators();
 const resources = getPublishedResources();
-
-function slugify(value: string): string {
-  return value
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-}
 
 function toInput(post?: CmsBlogPost): BlogPostInput {
   return {
@@ -107,6 +100,12 @@ export function BlogEditor({
   const [tagsInput, setTagsInput] = useState(() => (post?.tags ?? []).join(', '));
   const [pending, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
+  const [messageTone, setMessageTone] = useState<'success' | 'error' | 'warning'>(
+    'success',
+  );
+  const [liveSlug, setLiveSlug] = useState<string | null>(
+    post?.status === 'published' && post.slug ? post.slug : null,
+  );
 
   const seoChecks = useMemo(() => getBlogEditorSeoChecks(form), [form]);
   const seoScore = useMemo(() => blogEditorSeoScore(form), [form]);
@@ -133,7 +132,7 @@ export function BlogEditor({
     return {
       ...form,
       status,
-      slug: form.slug.trim() || slugify(form.title),
+      slug: form.slug.trim() || normalizeBlogSlug(form.title),
       tags: tagsInput
         .split(',')
         .map((tag) => tag.trim())
@@ -141,23 +140,107 @@ export function BlogEditor({
     };
   }
 
+  function publishSlugError(payload: BlogPostInput): string | null {
+    if (!isValidBlogSlug(payload.slug)) {
+      return 'Add a valid slug before publishing. Use lowercase letters, numbers, and hyphens only.';
+    }
+    return null;
+  }
+
   function handleSave(status: CmsContentStatus) {
+    const slugBefore = form.slug.trim() || normalizeBlogSlug(form.title);
+    const payload = buildPayload(status);
+
+    if (status === 'published') {
+      const slugError = publishSlugError(payload);
+      if (slugError) {
+        setMessageTone('error');
+        setMessage(slugError);
+        return;
+      }
+    }
+
     startTransition(async () => {
       setMessage(null);
-      const saved = await saveBlogPostAction(buildPayload(status));
-      setMessage(status === 'published' ? 'Post published.' : 'Draft saved.');
-      if (mode === 'create') {
-        router.replace(`/admin/blog/${saved.id}`);
+
+      try {
+        const { post: saved, revalidationWarning } = await saveBlogPostAction(payload);
+        const redirectTarget =
+          mode === 'create' ? `/admin/blog/${saved.id}` : null;
+
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[blog-publish]', {
+            postId: saved.id,
+            slugBefore,
+            slugAfter: saved.slug,
+            redirectTarget,
+            revalidationWarning: revalidationWarning ?? 'ok',
+          });
+        }
+
+        setForm((current) => ({
+          ...current,
+          id: saved.id,
+          slug: saved.slug,
+          status: saved.status,
+        }));
+
+        if (saved.status === 'published') {
+          setLiveSlug(saved.slug);
+        } else if (status === 'archived') {
+          setLiveSlug(null);
+        }
+
+        if (status === 'published') {
+          if (revalidationWarning) {
+            setMessageTone('warning');
+            setMessage(
+              `Published successfully. Warning: ${revalidationWarning}`,
+            );
+          } else {
+            setMessageTone('success');
+            setMessage('Published successfully.');
+          }
+        } else {
+          setMessageTone('success');
+          setMessage(status === 'draft' ? 'Draft saved.' : 'Post archived.');
+        }
+
+        if (mode === 'create') {
+          router.replace(`/admin/blog/${saved.id}`);
+        }
+        router.refresh();
+      } catch (error) {
+        setMessageTone('error');
+        setMessage(error instanceof Error ? error.message : 'Save failed.');
       }
-      router.refresh();
     });
   }
 
   function handleQuickAction(action: (id: string) => Promise<void>) {
     if (!post?.id) return;
+
+    const slug = form.slug.trim() || normalizeBlogSlug(form.title);
+    if (!isValidBlogSlug(slug)) {
+      setMessageTone('error');
+      setMessage(
+        'Add a valid slug before publishing. Use lowercase letters, numbers, and hyphens only.',
+      );
+      return;
+    }
+
     startTransition(async () => {
-      await action(post.id);
-      router.refresh();
+      setMessage(null);
+      try {
+        await action(post.id);
+        setMessageTone('success');
+        setMessage('Published successfully.');
+        setLiveSlug(slug);
+        router.refresh();
+      } catch (error) {
+        setMessageTone('error');
+        setMessage(error instanceof Error ? error.message : 'Publish failed.');
+      }
     });
   }
 
@@ -186,7 +269,7 @@ export function BlogEditor({
                   onChange={(event) => {
                     updateField('title', event.target.value);
                     if (!form.slug || mode === 'create') {
-                      updateField('slug', slugify(event.target.value));
+                      updateField('slug', normalizeBlogSlug(event.target.value));
                     }
                   }}
                 />
@@ -351,7 +434,7 @@ export function BlogEditor({
                     onChange={(event) =>
                       updateField('ogImage', event.target.value || null)
                     }
-                    placeholder="/og/blog/example.png"
+                    placeholder="/images/blog/example-hero.jpg"
                   />
                 </div>
               </div>
@@ -376,7 +459,7 @@ export function BlogEditor({
             </div>
           </section>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button disabled={pending} onClick={() => handleSave('draft')}>
               Save draft
             </Button>
@@ -394,6 +477,13 @@ export function BlogEditor({
             >
               Archive
             </Button>
+            {liveSlug ? (
+              <Button variant="link" size="sm" className="px-0" asChild>
+                <Link href={`/blog/${liveSlug}`} target="_blank" rel="noreferrer">
+                  View live post
+                </Link>
+              </Button>
+            ) : null}
             {post?.id ? (
               <>
                 {post.status !== 'published' ? (
@@ -428,7 +518,19 @@ export function BlogEditor({
           </div>
 
           {message ? (
-            <p className="text-sm text-muted-foreground" role="status">
+            <p
+              className={cn(
+                'rounded-md border px-3 py-2 text-sm',
+                messageTone === 'success' &&
+                  'border-tc-savings/30 bg-tc-savings-muted/40 text-foreground',
+                messageTone === 'warning' &&
+                  'border-amber-500/30 bg-amber-500/10 text-foreground',
+                messageTone === 'error' &&
+                  'border-tc-liability/20 bg-tc-liability-muted/30 text-tc-liability',
+              )}
+              role="status"
+              aria-live="polite"
+            >
               {message}
             </p>
           ) : null}

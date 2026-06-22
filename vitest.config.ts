@@ -12,6 +12,7 @@ export default defineConfig({
       'src/lib/admin/resources/**/*.test.ts',
       'src/lib/cms/**/*.test.ts',
       'src/lib/cms/**/*.test.tsx',
+      'src/lib/blog/**/*.test.ts',
     ],
   },
   resolve: {

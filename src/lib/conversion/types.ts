@@ -6,6 +6,8 @@ export interface RelatedContentLink {
   href: string;
   description?: string;
   readingTime?: string;
+  imageUrl?: string;
+  imageAlt?: string;
 }
 
 export type CalculatorJourneyId =

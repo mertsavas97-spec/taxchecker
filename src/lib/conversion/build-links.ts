@@ -2,6 +2,7 @@ import { calculators, getCalculatorBySlug } from '@/config/calculators';
 import { getResourceBySlug } from '@/config/resources';
 import type { CmsBlogPost } from '@/lib/admin/content/types';
 import { getBlogPostPath } from '@/lib/blog/paths';
+import { resolveBlogImageAlt, resolveBlogImagePath } from '@/lib/blog/thumbnails';
 import type {
   JourneyLinkRef,
   RelatedContentKind,
@@ -51,6 +52,8 @@ function articleLink(post: CmsBlogPost): RelatedContentLink {
     href: getBlogPostPath(post.slug),
     description: post.excerpt,
     readingTime: post.readingTime,
+    imageUrl: resolveBlogImagePath(post),
+    imageAlt: resolveBlogImageAlt(post),
   };
 }
 

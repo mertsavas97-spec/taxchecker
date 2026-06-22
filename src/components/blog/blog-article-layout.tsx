@@ -10,8 +10,10 @@ import { JsonLd } from '@/components/seo/json-ld';
 import { site } from '@/config/site';
 import type { CmsBlogPost } from '@/lib/admin/content/types';
 import { MarkdownContent } from '@/components/content/markdown-content';
+import { BlogThumbnail } from '@/components/blog/blog-thumbnail';
 import { buildBlogArticleJsonLd, getPublishedBlogFaqs } from '@/lib/blog/blog-faq-public';
 import { getBlogPostPath, isTaxRelatedBlogPost } from '@/lib/blog/paths';
+import { getBlogThumbnail } from '@/lib/blog/thumbnails';
 import { getPublishedBlogPostsPublic } from '@/lib/cms/public-read';
 import { buildRelatedContentForBlogPost } from '@/lib/conversion/related-content';
 import { cn } from '@/lib/utils';
@@ -68,6 +70,7 @@ export async function BlogArticleLayout({ post }: { post: CmsBlogPost }) {
 
   const showDisclaimer = isTaxRelatedBlogPost(post);
   const faqs = getPublishedBlogFaqs(post);
+  const thumbnail = getBlogThumbnail(post);
 
   const jsonLd = buildBlogArticleJsonLd(post, path);
 
@@ -94,6 +97,13 @@ export async function BlogArticleLayout({ post }: { post: CmsBlogPost }) {
         <PageContainer width="page">
           <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(16rem,20rem)]">
             <article className="min-w-0 space-y-6">
+              <BlogThumbnail
+                src={thumbnail.src}
+                alt={thumbnail.alt}
+                priority
+                variant="hero"
+              />
+
               <MarkdownContent content={post.content} className="tc-prose" />
 
               <RelatedContentBlock

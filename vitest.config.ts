@@ -13,6 +13,7 @@ export default defineConfig({
       'src/lib/cms/**/*.test.ts',
       'src/lib/cms/**/*.test.tsx',
       'src/lib/blog/**/*.test.ts',
+      'src/lib/analytics/**/*.test.ts',
     ],
   },
   resolve: {

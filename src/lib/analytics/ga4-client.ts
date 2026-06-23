@@ -2,6 +2,20 @@ import 'server-only';
 
 import { BetaAnalyticsDataClient } from '@google-analytics/data';
 
+import {
+  EMPTY_ANALYTICS_SUMMARY,
+  mapCountries,
+  mapDailyMetrics,
+  mapSummaryMetrics,
+  mapTopPages,
+  mapTrafficSources,
+  parseMetricValue,
+} from '@/lib/analytics/ga4-overview-mappers';
+import {
+  type AnalyticsRange,
+  toGa4DateRange,
+} from '@/lib/analytics/ga4-range';
+
 export interface Ga4OverviewMetrics {
   activeUsers: number;
   sessions: number;
@@ -16,6 +30,38 @@ export interface Ga4Last30DaysReport {
   metrics: Ga4OverviewMetrics;
 }
 
+export interface AnalyticsOverviewResponse {
+  range: AnalyticsRange;
+  summary: {
+    pageViews: number;
+    activeUsers: number;
+    newUsers: number;
+    sessions: number;
+  };
+  daily: Array<{
+    date: string;
+    pageViews: number;
+    activeUsers: number;
+    sessions: number;
+  }>;
+  topPages: Array<{
+    path: string;
+    title: string;
+    pageViews: number;
+    activeUsers: number;
+  }>;
+  trafficSources: Array<{
+    source: string;
+    sessions: number;
+    activeUsers: number;
+  }>;
+  countries: Array<{
+    country: string;
+    activeUsers: number;
+    sessions: number;
+  }>;
+}
+
 interface Ga4EnvConfig {
   propertyId: string;
   clientEmail: string;
@@ -28,13 +74,13 @@ function readGa4EnvConfig(): Ga4EnvConfig {
   const privateKey = process.env.GA4_PRIVATE_KEY?.replace(/\\n/g, '\n').trim();
 
   if (!propertyId) {
-    throw new Error('GA4_PROPERTY_ID is not configured.');
+    throw new Error('GA4 is not configured.');
   }
   if (!clientEmail) {
-    throw new Error('GA4_CLIENT_EMAIL is not configured.');
+    throw new Error('GA4 is not configured.');
   }
   if (!privateKey) {
-    throw new Error('GA4_PRIVATE_KEY is not configured.');
+    throw new Error('GA4 is not configured.');
   }
 
   return { propertyId, clientEmail, privateKey };
@@ -54,17 +100,20 @@ function createGa4Client(config: Ga4EnvConfig): BetaAnalyticsDataClient {
   });
 }
 
-function parseMetricValue(value: string | null | undefined): number {
-  const parsed = Number(value ?? 0);
-  return Number.isFinite(parsed) ? parsed : 0;
+function getGa4Runtime() {
+  const config = readGa4EnvConfig();
+  return {
+    config,
+    client: createGa4Client(config),
+    property: toGa4PropertyResource(config.propertyId),
+  };
 }
 
 export async function fetchGa4Last30DaysOverviewMetrics(): Promise<Ga4Last30DaysReport> {
-  const config = readGa4EnvConfig();
-  const client = createGa4Client(config);
+  const { client, property } = getGa4Runtime();
 
   const [response] = await client.runReport({
-    property: toGa4PropertyResource(config.propertyId),
+    property,
     dateRanges: [{ startDate: '30daysAgo', endDate: 'today' }],
     metrics: [
       { name: 'activeUsers' },
@@ -85,5 +134,81 @@ export async function fetchGa4Last30DaysOverviewMetrics(): Promise<Ga4Last30Days
       sessions: parseMetricValue(metricValues[1]?.value),
       screenPageViews: parseMetricValue(metricValues[2]?.value),
     },
+  };
+}
+
+export async function fetchGa4AnalyticsOverview(
+  range: AnalyticsRange,
+): Promise<AnalyticsOverviewResponse> {
+  const { client, property } = getGa4Runtime();
+  const dateRange = toGa4DateRange(range);
+
+  const [
+    summaryResponse,
+    dailyResponse,
+    topPagesResponse,
+    trafficSourcesResponse,
+    countriesResponse,
+  ] = await Promise.all([
+    client.runReport({
+      property,
+      dateRanges: [dateRange],
+      metrics: [
+        { name: 'screenPageViews' },
+        { name: 'activeUsers' },
+        { name: 'newUsers' },
+        { name: 'sessions' },
+      ],
+    }),
+    client.runReport({
+      property,
+      dateRanges: [dateRange],
+      dimensions: [{ name: 'date' }],
+      metrics: [
+        { name: 'screenPageViews' },
+        { name: 'activeUsers' },
+        { name: 'sessions' },
+      ],
+      orderBys: [{ dimension: { dimensionName: 'date' } }],
+    }),
+    client.runReport({
+      property,
+      dateRanges: [dateRange],
+      dimensions: [{ name: 'pagePath' }, { name: 'pageTitle' }],
+      metrics: [{ name: 'screenPageViews' }, { name: 'activeUsers' }],
+      orderBys: [{ metric: { metricName: 'screenPageViews' }, desc: true }],
+      limit: 20,
+    }),
+    client.runReport({
+      property,
+      dateRanges: [dateRange],
+      dimensions: [{ name: 'sessionDefaultChannelGroup' }],
+      metrics: [{ name: 'sessions' }, { name: 'activeUsers' }],
+      orderBys: [{ metric: { metricName: 'sessions' }, desc: true }],
+      limit: 10,
+    }),
+    client.runReport({
+      property,
+      dateRanges: [dateRange],
+      dimensions: [{ name: 'country' }],
+      metrics: [{ name: 'activeUsers' }, { name: 'sessions' }],
+      orderBys: [{ metric: { metricName: 'activeUsers' }, desc: true }],
+      limit: 10,
+    }),
+  ]);
+
+  const [summary] = summaryResponse;
+  const [daily] = dailyResponse;
+  const [topPages] = topPagesResponse;
+  const [trafficSources] = trafficSourcesResponse;
+  const [countries] = countriesResponse;
+
+  return {
+    range,
+    summary: summary?.rows?.length ? mapSummaryMetrics(summary) : { ...EMPTY_ANALYTICS_SUMMARY },
+    daily: daily ? mapDailyMetrics(daily) : [],
+    topPages: topPages ? mapTopPages(topPages) : [],
+    trafficSources: trafficSources ? mapTrafficSources(trafficSources) : [],
+    countries: countries ? mapCountries(countries) : [],
   };
 }

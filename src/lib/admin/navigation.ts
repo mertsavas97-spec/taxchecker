@@ -1,5 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 import {
+  BarChart3Icon,
   BookOpenIcon,
   CalculatorIcon,
   FileTextIcon,
@@ -20,6 +21,12 @@ export const adminNavItems: AdminNavItem[] = [
     href: '/admin',
     icon: LayoutDashboardIcon,
     description: 'Overview and recent activity',
+  },
+  {
+    label: 'Analytics',
+    href: '/admin/analytics',
+    icon: BarChart3Icon,
+    description: 'GA4 traffic summary',
   },
   {
     label: 'Content',

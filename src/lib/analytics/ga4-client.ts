@@ -15,6 +15,9 @@ import {
   type AnalyticsRange,
   toGa4DateRange,
 } from '@/lib/analytics/ga4-range';
+import type { AnalyticsOverviewResponse } from '@/lib/analytics/types';
+
+export type { AnalyticsOverviewResponse } from '@/lib/analytics/types';
 
 export interface Ga4OverviewMetrics {
   activeUsers: number;
@@ -28,38 +31,6 @@ export interface Ga4Last30DaysReport {
     endDate: 'today';
   };
   metrics: Ga4OverviewMetrics;
-}
-
-export interface AnalyticsOverviewResponse {
-  range: AnalyticsRange;
-  summary: {
-    pageViews: number;
-    activeUsers: number;
-    newUsers: number;
-    sessions: number;
-  };
-  daily: Array<{
-    date: string;
-    pageViews: number;
-    activeUsers: number;
-    sessions: number;
-  }>;
-  topPages: Array<{
-    path: string;
-    title: string;
-    pageViews: number;
-    activeUsers: number;
-  }>;
-  trafficSources: Array<{
-    source: string;
-    sessions: number;
-    activeUsers: number;
-  }>;
-  countries: Array<{
-    country: string;
-    activeUsers: number;
-    sessions: number;
-  }>;
 }
 
 interface Ga4EnvConfig {

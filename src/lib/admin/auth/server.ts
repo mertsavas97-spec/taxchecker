@@ -6,6 +6,7 @@ import {
   ADMIN_SESSION_COOKIE,
   ADMIN_SESSION_MAX_AGE,
 } from '@/lib/admin/auth/constants';
+import { ANALYTICS_INTERNAL_COOKIE } from '@/lib/analytics/internal-traffic';
 import {
   isSupabaseAdminAuthenticated,
   useSupabaseAdminAuth,
@@ -49,6 +50,22 @@ export async function requireAdminSession(): Promise<void> {
   }
 }
 
+export async function setAnalyticsInternalCookie(): Promise<void> {
+  const cookieStore = await cookies();
+  cookieStore.set(ANALYTICS_INTERNAL_COOKIE, '1', {
+    httpOnly: false,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/',
+    maxAge: ADMIN_SESSION_MAX_AGE,
+  });
+}
+
+export async function clearAnalyticsInternalCookie(): Promise<void> {
+  const cookieStore = await cookies();
+  cookieStore.delete(ANALYTICS_INTERNAL_COOKIE);
+}
+
 export async function setAdminSessionCookie(): Promise<void> {
   const cookieStore = await cookies();
   cookieStore.set(ADMIN_SESSION_COOKIE, await createAdminSessionToken(), {
@@ -58,17 +75,20 @@ export async function setAdminSessionCookie(): Promise<void> {
     path: '/',
     maxAge: ADMIN_SESSION_MAX_AGE,
   });
+  await setAnalyticsInternalCookie();
 }
 
 export async function clearAdminSessionCookie(): Promise<void> {
   const cookieStore = await cookies();
   cookieStore.delete(ADMIN_SESSION_COOKIE);
+  await clearAnalyticsInternalCookie();
 }
 
 export async function signOutAdminSession(): Promise<void> {
   if (useSupabaseAdminAuth()) {
     const supabase = await createClient();
     await supabase.auth.signOut();
+    await clearAnalyticsInternalCookie();
     return;
   }
   await clearAdminSessionCookie();

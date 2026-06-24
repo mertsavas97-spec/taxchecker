@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server';
 
 import {
-  clearAdminSessionCookie,
   setAdminSessionCookie,
-  signOutAdminSession,
+  setAnalyticsInternalCookie,
 } from '@/lib/admin/auth/server';
 import {
   isEmailRegisteredAdmin,
@@ -41,6 +40,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
 
+    await setAnalyticsInternalCookie();
     return NextResponse.json({ ok: true });
   }
 

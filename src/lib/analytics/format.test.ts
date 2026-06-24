@@ -5,6 +5,7 @@ import {
   formatAnalyticsDateLabel,
   formatAnalyticsNumber,
   isAnalyticsOverviewEmpty,
+  isLowAnalyticsData,
 } from '@/lib/analytics/format';
 
 describe('analytics format helpers', () => {
@@ -38,5 +39,10 @@ describe('analytics format helpers', () => {
         sessions: 0,
       }),
     ).toBe(false);
+  });
+
+  it('detects low analytics data', () => {
+    expect(isLowAnalyticsData({ pageViews: 50, sessions: 25 })).toBe(true);
+    expect(isLowAnalyticsData({ pageViews: 51, sessions: 26 })).toBe(false);
   });
 });

@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 
+import { isEmailRegisteredAdmin } from '@/lib/admin/auth/supabase-auth';
+import { setAnalyticsInternalCookie } from '@/lib/admin/auth/server';
 import { createClient } from '@/lib/supabase/server';
 
 export async function GET(request: Request) {
@@ -9,7 +11,14 @@ export async function GET(request: Request) {
 
   if (code) {
     const supabase = await createClient();
-    await supabase.auth.exchangeCodeForSession(code);
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+
+    if (!error && data.user?.email) {
+      const isAdmin = await isEmailRegisteredAdmin(data.user.email);
+      if (isAdmin) {
+        await setAnalyticsInternalCookie();
+      }
+    }
   }
 
   return NextResponse.redirect(`${origin}${next}`);

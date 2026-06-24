@@ -1,22 +1,28 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
+import { RefreshCwIcon } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
+import {
+  CombinedDailyTrendChart,
+  CountriesBarChart,
+  DailyActiveUsersChart,
+  DailyPageViewsChart,
+  DailySessionsChart,
+  TopPagesBarChart,
+  TrafficSourcesBarChart,
+} from '@/components/admin/analytics/analytics-charts';
+import {
+  CountriesTable,
+  DailyPerformanceTable,
+  InternalTrafficToggle,
+  TopPagesTable,
+  TrafficSourcesTable,
+} from '@/components/admin/analytics/analytics-tables';
 import { AdminEmptyState } from '@/components/admin/admin-empty-state';
 import { AdminPageHeader } from '@/components/admin/admin-page-header';
 import { AdminStatCard } from '@/components/admin/admin-stat-card';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import {
   Select,
   SelectContent,
@@ -25,20 +31,14 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { filterTopPages } from '@/lib/analytics/filters';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  formatAnalyticsCountryLabel,
   formatAnalyticsDateLabel,
   formatAnalyticsNumber,
+  formatLastUpdated,
   isAnalyticsOverviewEmpty,
-  truncateAnalyticsLabel,
+  isLowAnalyticsData,
 } from '@/lib/analytics/format';
 import type { AnalyticsRange } from '@/lib/analytics/ga4-range';
 import {
@@ -46,55 +46,15 @@ import {
   type AnalyticsOverviewResponse,
 } from '@/lib/analytics/types';
 
-const CHART_COLORS = {
-  pageViews: 'oklch(0.42 0.1 250)',
-  activeUsers: 'oklch(0.45 0.1 155)',
-  sessions: 'oklch(0.55 0.14 75)',
-  countries: 'oklch(0.5 0.12 200)',
+const CHART_HEIGHT_OVERVIEW = 'h-64';
+const CHART_HEIGHT_FULL = 'h-80';
+
+const METRIC_HINTS = {
+  pageViews: 'Total page loads',
+  activeUsers: 'Unique engaged users',
+  newUsers: 'First-time users',
+  sessions: 'Visits',
 } as const;
-
-function AnalyticsChartCard({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <Card className="shadow-tc-sm">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-semibold">{title}</CardTitle>
-      </CardHeader>
-      <CardContent className="h-72">{children}</CardContent>
-    </Card>
-  );
-}
-
-function ChartTooltip({
-  active,
-  payload,
-  label,
-}: {
-  active?: boolean;
-  payload?: Array<{ name?: string; value?: number; color?: string }>;
-  label?: string;
-}) {
-  if (!active || !payload?.length) {
-    return null;
-  }
-
-  return (
-    <div className="rounded-md border border-border bg-card px-3 py-2 text-xs shadow-tc-sm">
-      {label ? <p className="mb-1 font-medium text-foreground">{label}</p> : null}
-      {payload.map((entry) => (
-        <p key={entry.name} className="text-muted-foreground">
-          <span style={{ color: entry.color }}>{entry.name}</span>:{' '}
-          {formatAnalyticsNumber(entry.value ?? 0)}
-        </p>
-      ))}
-    </div>
-  );
-}
 
 function AnalyticsLoadingState() {
   return (
@@ -104,30 +64,21 @@ function AnalyticsLoadingState() {
           <Skeleton key={index} className="h-28 rounded-lg" />
         ))}
       </div>
+      <Skeleton className="h-9 w-72 rounded-lg" />
       <div className="grid gap-4 xl:grid-cols-2">
-        {Array.from({ length: 4 }).map((_, index) => (
-          <Skeleton key={index} className="h-80 rounded-lg" />
+        {Array.from({ length: 2 }).map((_, index) => (
+          <Skeleton key={index} className="h-72 rounded-lg" />
         ))}
       </div>
-      <Skeleton className="h-64 rounded-lg" />
     </div>
   );
 }
 
-function AnalyticsTableSection({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
+function LowDataNotice() {
   return (
-    <section className="space-y-3">
-      <h2 className="text-sm font-semibold text-foreground">{title}</h2>
-      <div className="overflow-hidden rounded-lg border border-border bg-card shadow-tc-sm">
-        {children}
-      </div>
-    </section>
+    <div className="rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
+      Analytics data is still early. Trends will become more useful as traffic grows.
+    </div>
   );
 }
 
@@ -135,18 +86,24 @@ export function AnalyticsDashboard() {
   const [range, setRange] = useState<AnalyticsRange>('30d');
   const [data, setData] = useState<AnalyticsOverviewResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [includeInternalTraffic, setIncludeInternalTraffic] = useState(false);
 
-  useEffect(() => {
-    const controller = new AbortController();
-
-    async function loadOverview() {
-      setLoading(true);
+  const loadOverview = useCallback(
+    async (signal: AbortSignal, isRefresh: boolean) => {
+      if (isRefresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
       setError(null);
 
       try {
         const response = await fetch(`/api/admin/analytics/overview?range=${range}`, {
-          signal: controller.signal,
+          signal,
           cache: 'no-store',
         });
 
@@ -159,6 +116,7 @@ export function AnalyticsDashboard() {
         }
 
         setData(body);
+        setLastUpdated(new Date());
       } catch (fetchError) {
         if (fetchError instanceof DOMException && fetchError.name === 'AbortError') {
           return;
@@ -172,13 +130,17 @@ export function AnalyticsDashboard() {
         );
       } finally {
         setLoading(false);
+        setRefreshing(false);
       }
-    }
+    },
+    [range],
+  );
 
-    void loadOverview();
-
+  useEffect(() => {
+    const controller = new AbortController();
+    void loadOverview(controller.signal, refreshKey > 0);
     return () => controller.abort();
-  }, [range]);
+  }, [loadOverview, refreshKey]);
 
   const dailyChartData = useMemo(
     () =>
@@ -189,58 +151,56 @@ export function AnalyticsDashboard() {
     [data?.daily],
   );
 
-  const topPagesChartData = useMemo(
-    () =>
-      (data?.topPages ?? []).slice(0, 10).map((page) => ({
-        ...page,
-        label: truncateAnalyticsLabel(page.title || page.path, 24),
-      })),
-    [data?.topPages],
+  const filteredTopPages = useMemo(
+    () => filterTopPages(data?.topPages ?? [], includeInternalTraffic),
+    [data?.topPages, includeInternalTraffic],
   );
 
-  const trafficChartData = useMemo(
-    () =>
-      (data?.trafficSources ?? []).map((source) => ({
-        ...source,
-        label: truncateAnalyticsLabel(source.source, 20),
-      })),
-    [data?.trafficSources],
-  );
+  const showLowDataNotice =
+    data &&
+    (isAnalyticsOverviewEmpty(data.summary) || isLowAnalyticsData(data.summary));
 
-  const countryChartData = useMemo(
-    () =>
-      (data?.countries ?? []).map((country) => ({
-        ...country,
-        label: truncateAnalyticsLabel(formatAnalyticsCountryLabel(country.country), 18),
-      })),
-    [data?.countries],
+  const headerActions = (
+    <div className="flex flex-wrap items-center gap-2">
+      {lastUpdated ? (
+        <p className="text-xs text-muted-foreground">
+          Last updated {formatLastUpdated(lastUpdated)}
+        </p>
+      ) : null}
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        disabled={loading || refreshing}
+        onClick={() => setRefreshKey((value) => value + 1)}
+      >
+        <RefreshCwIcon className={refreshing ? 'animate-spin' : undefined} />
+        Refresh
+      </Button>
+      <Select
+        value={range}
+        onValueChange={(value) => setRange(value as AnalyticsRange)}
+      >
+        <SelectTrigger className="w-40">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {ANALYTICS_RANGE_OPTIONS.map((option) => (
+            <SelectItem key={option.value} value={option.value}>
+              {option.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
   );
-
-  const showEmptyState =
-    !loading && !error && data && isAnalyticsOverviewEmpty(data.summary);
 
   return (
     <div>
       <AdminPageHeader
         title="Analytics"
-        description="Simple GA4 summary for TaxChecker"
-        actions={
-          <Select
-            value={range}
-            onValueChange={(value) => setRange(value as AnalyticsRange)}
-          >
-            <SelectTrigger className="w-40">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {ANALYTICS_RANGE_OPTIONS.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        }
+        description="GA4 summary for TaxChecker traffic and engagement"
+        actions={headerActions}
       />
 
       {loading ? <AnalyticsLoadingState /> : null}
@@ -252,266 +212,108 @@ export function AnalyticsDashboard() {
         />
       ) : null}
 
-      {!loading && !error && showEmptyState ? (
-        <AdminEmptyState
-          title="No analytics data yet"
-          description="There is no GA4 activity for the selected date range."
-        />
-      ) : null}
-
-      {!loading && !error && data && !showEmptyState ? (
-        <div className="space-y-8">
+      {!loading && !error && data ? (
+        <div className="space-y-6">
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <AdminStatCard
               label="Page views"
               value={formatAnalyticsNumber(data.summary.pageViews)}
+              hint={METRIC_HINTS.pageViews}
             />
             <AdminStatCard
               label="Active users"
               value={formatAnalyticsNumber(data.summary.activeUsers)}
+              hint={METRIC_HINTS.activeUsers}
             />
             <AdminStatCard
               label="New users"
               value={formatAnalyticsNumber(data.summary.newUsers)}
+              hint={METRIC_HINTS.newUsers}
             />
             <AdminStatCard
               label="Sessions"
               value={formatAnalyticsNumber(data.summary.sessions)}
+              hint={METRIC_HINTS.sessions}
             />
           </div>
 
-          <div className="grid gap-4 xl:grid-cols-2">
-            <AnalyticsChartCard title="Daily page views">
-              {dailyChartData.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={dailyChartData}>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                    <XAxis
-                      dataKey="label"
-                      tick={{ fontSize: 12 }}
-                      interval="preserveStartEnd"
-                    />
-                    <YAxis tick={{ fontSize: 12 }} width={40} />
-                    <Tooltip content={<ChartTooltip />} />
-                    <Line
-                      type="monotone"
-                      dataKey="pageViews"
-                      name="Page views"
-                      stroke={CHART_COLORS.pageViews}
-                      strokeWidth={2}
-                      dot={false}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              ) : (
-                <AdminEmptyState
-                  title="No daily page view data"
-                  className="h-full border-0 shadow-none"
+          {showLowDataNotice ? <LowDataNotice /> : null}
+
+          <Tabs defaultValue="overview" className="gap-4">
+            <TabsList variant="line">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="charts">Charts</TabsTrigger>
+              <TabsTrigger value="tables">Tables</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="overview" className="space-y-6">
+              <div className="grid gap-4 xl:grid-cols-2">
+                <CombinedDailyTrendChart
+                  data={dailyChartData}
+                  heightClassName={CHART_HEIGHT_OVERVIEW}
                 />
-              )}
-            </AnalyticsChartCard>
-
-            <AnalyticsChartCard title="Daily active users">
-              {dailyChartData.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={dailyChartData}>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                    <XAxis
-                      dataKey="label"
-                      tick={{ fontSize: 12 }}
-                      interval="preserveStartEnd"
-                    />
-                    <YAxis tick={{ fontSize: 12 }} width={40} />
-                    <Tooltip content={<ChartTooltip />} />
-                    <Line
-                      type="monotone"
-                      dataKey="activeUsers"
-                      name="Active users"
-                      stroke={CHART_COLORS.activeUsers}
-                      strokeWidth={2}
-                      dot={false}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              ) : (
-                <AdminEmptyState
-                  title="No daily active user data"
-                  className="h-full border-0 shadow-none"
+                <TopPagesBarChart
+                  pages={filteredTopPages}
+                  heightClassName={CHART_HEIGHT_OVERVIEW}
                 />
-              )}
-            </AnalyticsChartCard>
+              </div>
 
-            <AnalyticsChartCard title="Top pages by page views">
-              {topPagesChartData.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={topPagesChartData} layout="vertical" margin={{ left: 8 }}>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                    <XAxis type="number" tick={{ fontSize: 12 }} />
-                    <YAxis
-                      type="category"
-                      dataKey="label"
-                      width={110}
-                      tick={{ fontSize: 11 }}
-                    />
-                    <Tooltip content={<ChartTooltip />} />
-                    <Bar
-                      dataKey="pageViews"
-                      name="Page views"
-                      fill={CHART_COLORS.pageViews}
-                      radius={[0, 4, 4, 0]}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <AdminEmptyState
-                  title="No top page data"
-                  className="h-full border-0 shadow-none"
+              <div className="grid gap-6 xl:grid-cols-2">
+                <TopPagesTable pages={filteredTopPages} compact />
+                <TrafficSourcesTable sources={data.trafficSources} compact />
+              </div>
+            </TabsContent>
+
+            <TabsContent value="charts" className="space-y-4">
+              <div className="grid gap-4 xl:grid-cols-2">
+                <DailyPageViewsChart
+                  data={dailyChartData}
+                  heightClassName={CHART_HEIGHT_FULL}
                 />
-              )}
-            </AnalyticsChartCard>
-
-            <AnalyticsChartCard title="Traffic sources by sessions">
-              {trafficChartData.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={trafficChartData}>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                    <XAxis dataKey="label" tick={{ fontSize: 11 }} interval={0} angle={-20} height={60} textAnchor="end" />
-                    <YAxis tick={{ fontSize: 12 }} width={40} />
-                    <Tooltip content={<ChartTooltip />} />
-                    <Bar
-                      dataKey="sessions"
-                      name="Sessions"
-                      fill={CHART_COLORS.sessions}
-                      radius={[4, 4, 0, 0]}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <AdminEmptyState
-                  title="No traffic source data"
-                  className="h-full border-0 shadow-none"
+                <DailyActiveUsersChart
+                  data={dailyChartData}
+                  heightClassName={CHART_HEIGHT_FULL}
                 />
-              )}
-            </AnalyticsChartCard>
-
-            <AnalyticsChartCard title="Countries by active users">
-              {countryChartData.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={countryChartData}>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                    <XAxis dataKey="label" tick={{ fontSize: 11 }} interval={0} angle={-20} height={60} textAnchor="end" />
-                    <YAxis tick={{ fontSize: 12 }} width={40} />
-                    <Tooltip content={<ChartTooltip />} />
-                    <Bar
-                      dataKey="activeUsers"
-                      name="Active users"
-                      fill={CHART_COLORS.countries}
-                      radius={[4, 4, 0, 0]}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <AdminEmptyState
-                  title="No country data"
-                  className="h-full border-0 shadow-none"
+                <DailySessionsChart
+                  data={dailyChartData}
+                  heightClassName={CHART_HEIGHT_FULL}
                 />
-              )}
-            </AnalyticsChartCard>
-          </div>
+                <CombinedDailyTrendChart
+                  data={dailyChartData}
+                  heightClassName={CHART_HEIGHT_FULL}
+                />
+              </div>
 
-          <AnalyticsTableSection title="Top pages">
-            {data.topPages.length > 0 ? (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Page title</TableHead>
-                    <TableHead>Path</TableHead>
-                    <TableHead className="text-right">Page views</TableHead>
-                    <TableHead className="text-right">Active users</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {data.topPages.map((page) => (
-                    <TableRow key={`${page.path}-${page.title}`}>
-                      <TableCell className="font-medium">{page.title}</TableCell>
-                      <TableCell className="text-muted-foreground">{page.path}</TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {formatAnalyticsNumber(page.pageViews)}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {formatAnalyticsNumber(page.activeUsers)}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            ) : (
-              <AdminEmptyState title="No top pages" className="border-0 shadow-none" />
-            )}
-          </AnalyticsTableSection>
+              <div className="grid gap-4 xl:grid-cols-2">
+                <TopPagesBarChart
+                  pages={filteredTopPages}
+                  heightClassName={CHART_HEIGHT_FULL}
+                />
+                <TrafficSourcesBarChart
+                  sources={data.trafficSources}
+                  heightClassName={CHART_HEIGHT_FULL}
+                />
+                <CountriesBarChart
+                  countries={data.countries}
+                  heightClassName={CHART_HEIGHT_FULL}
+                />
+              </div>
+            </TabsContent>
 
-          <AnalyticsTableSection title="Traffic sources">
-            {data.trafficSources.length > 0 ? (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Source</TableHead>
-                    <TableHead className="text-right">Sessions</TableHead>
-                    <TableHead className="text-right">Active users</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {data.trafficSources.map((source) => (
-                    <TableRow key={source.source}>
-                      <TableCell className="font-medium">{source.source}</TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {formatAnalyticsNumber(source.sessions)}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {formatAnalyticsNumber(source.activeUsers)}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            ) : (
-              <AdminEmptyState
-                title="No traffic sources"
-                className="border-0 shadow-none"
-              />
-            )}
-          </AnalyticsTableSection>
+            <TabsContent value="tables" className="space-y-6">
+              <div className="flex flex-wrap items-center justify-end">
+                <InternalTrafficToggle
+                  checked={includeInternalTraffic}
+                  onCheckedChange={setIncludeInternalTraffic}
+                />
+              </div>
 
-          <AnalyticsTableSection title="Countries">
-            {data.countries.length > 0 ? (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Country</TableHead>
-                    <TableHead className="text-right">Active users</TableHead>
-                    <TableHead className="text-right">Sessions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {data.countries.map((country) => (
-                    <TableRow key={country.country}>
-                      <TableCell className="font-medium">
-                        {formatAnalyticsCountryLabel(country.country)}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {formatAnalyticsNumber(country.activeUsers)}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {formatAnalyticsNumber(country.sessions)}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            ) : (
-              <AdminEmptyState title="No country data" className="border-0 shadow-none" />
-            )}
-          </AnalyticsTableSection>
+              <DailyPerformanceTable daily={data.daily} />
+              <TopPagesTable pages={filteredTopPages} />
+              <TrafficSourcesTable sources={data.trafficSources} />
+              <CountriesTable countries={data.countries} />
+            </TabsContent>
+          </Tabs>
         </div>
       ) : null}
     </div>

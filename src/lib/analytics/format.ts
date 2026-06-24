@@ -42,3 +42,34 @@ export function isAnalyticsOverviewEmpty(summary: {
     summary.sessions === 0
   );
 }
+
+export function isLowAnalyticsData(summary: {
+  pageViews: number;
+  sessions: number;
+}): boolean {
+  return summary.pageViews <= 50 || summary.sessions <= 25;
+}
+
+export function formatLastUpdated(date: Date): string {
+  return date.toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+}
+
+export function formatAnalyticsTableDate(date: string): string {
+  const parsed = new Date(`${date}T12:00:00`);
+  if (Number.isNaN(parsed.getTime())) {
+    return date;
+  }
+
+  return parsed.toLocaleDateString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
+

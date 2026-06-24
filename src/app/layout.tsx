@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { ClarityProvider } from "@/components/clarity-provider";
 import { GoogleAdSense } from "@/components/GoogleAdSense";
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
+import { isAdminAuthenticated } from "@/lib/admin/auth/server";
 import { buildDefaultMetadata } from "@/lib/seo/metadata";
 import "./globals.css";
 
@@ -18,11 +19,13 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = buildDefaultMetadata();
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const hasAdminSession = await isAdminAuthenticated();
+
   return (
     <html
       lang="en"
@@ -32,7 +35,7 @@ export default function RootLayout({
         <GoogleAdSense />
       </head>
       <body className="min-h-full flex flex-col">
-        <GoogleAnalytics />
+        <GoogleAnalytics hasAdminSession={hasAdminSession} />
         <ClarityProvider />
         {children}
       </body>
